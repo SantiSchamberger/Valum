@@ -10,11 +10,15 @@ export function createClient() {
           if (typeof document === 'undefined') {
             return []
           }
-          const cookies = document.cookie.split('; ').map(cookie => {
-            const [name, ...rest] = cookie.split('=')
-            return {
-              name,
-              value: decodeURIComponent(rest.join('=')),
+          
+          const cookies: { name: string; value: string }[] = []
+          document.cookie.split('; ').forEach(cookie => {
+            if (cookie) {
+              const [name, ...rest] = cookie.split('=')
+              cookies.push({
+                name,
+                value: decodeURIComponent(rest.join('=')),
+              })
             }
           })
           return cookies
@@ -23,14 +27,26 @@ export function createClient() {
           if (typeof document === 'undefined') {
             return
           }
+          
           cookiesToSet.forEach(({ name, value, options }) => {
-            const cookieString = `${name}=${encodeURIComponent(value)}${
-              options?.maxAge ? `; Max-Age=${options.maxAge}` : ''
-            }${options?.path ? `; Path=${options.path}` : ''}${
-              options?.domain ? `; Domain=${options.domain}` : ''
-            }${options?.secure ? '; Secure' : ''}${
-              options?.sameSite ? `; SameSite=${options.sameSite}` : ''
-            }`
+            let cookieString = `${name}=${encodeURIComponent(value)}`
+            
+            if (options?.maxAge) {
+              cookieString += `; Max-Age=${options.maxAge}`
+            }
+            if (options?.path) {
+              cookieString += `; Path=${options.path}`
+            }
+            if (options?.domain) {
+              cookieString += `; Domain=${options.domain}`
+            }
+            if (options?.secure) {
+              cookieString += '; Secure'
+            }
+            if (options?.sameSite) {
+              cookieString += `; SameSite=${options.sameSite}`
+            }
+            
             document.cookie = cookieString
           })
         },
