@@ -42,14 +42,40 @@ export async function updateSession(request: NextRequest) {
   if (!user && path.startsWith('/dashboard')) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
-    return NextResponse.redirect(url)
+    
+    const redirectResponse = NextResponse.redirect(url)
+    // Copiar cookies para mantener la sesión sincronizada
+    response.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value, {
+        path: cookie.path,
+        domain: cookie.domain,
+        maxAge: cookie.maxAge,
+        secure: cookie.secure,
+        sameSite: cookie.sameSite,
+        expires: cookie.expires,
+      })
+    })
+    return redirectResponse
   }
 
   // Si hay usuario y trata de ir a /auth (login o registro)
   if (user && (path.startsWith('/auth/login') || path.startsWith('/auth/sign-up'))) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
+    
+    const redirectResponse = NextResponse.redirect(url)
+    // Copiar cookies para mantener la sesión sincronizada
+    response.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value, {
+        path: cookie.path,
+        domain: cookie.domain,
+        maxAge: cookie.maxAge,
+        secure: cookie.secure,
+        sameSite: cookie.sameSite,
+        expires: cookie.expires,
+      })
+    })
+    return redirectResponse
   }
 
   return response

@@ -92,7 +92,7 @@ export default function SignUpPage() {
       await new Promise(resolve => setTimeout(resolve, 500))
 
       console.log('[SignUp] Redirecting to dashboard')
-      router.replace('/dashboard')
+      window.location.href = '/dashboard'
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error al registrarse'
       console.log('[SignUp] Exception:', errorMessage)
