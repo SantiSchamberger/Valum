@@ -118,7 +118,7 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
           {/* Income Card */}
           <Card className="border-2 hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-green-600" />
                 Ingresos este mes
               </CardTitle>
@@ -134,7 +134,7 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
           {/* Expense Card */}
           <Card className="border-2 hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
                 <TrendingDown className="w-4 h-4 text-red-600" />
                 Gastos este mes
               </CardTitle>
@@ -150,7 +150,7 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
           {/* Balance Card */}
           <Card className="border-2 hover:shadow-lg transition-shadow bg-gradient-to-br from-primary/5 to-secondary/5">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
                 <Wallet className="w-4 h-4 text-primary" />
                 Balance
               </CardTitle>
