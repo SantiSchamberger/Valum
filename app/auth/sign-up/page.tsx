@@ -18,7 +18,6 @@ import { useState } from 'react'
 export default function SignUpPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [repeatPassword, setRepeatPassword] = useState('')
   const [fullName, setFullName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -30,49 +29,49 @@ export default function SignUpPage() {
     setIsLoading(true)
     setError(null)
 
-    if (password !== repeatPassword) {
-      setError('Las contraseñas no coinciden')
-      setIsLoading(false)
-      return
-    }
-
-    if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres')
-      setIsLoading(false)
-      return
-    }
-
     try {
-      const { error: signUpError } = await supabase.auth.signUp({
+      // Sign up user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
-            `${window.location.origin}/auth/callback`,
           data: {
             full_name: fullName,
-            role: 'client',
           },
         },
       })
-      if (signUpError) throw signUpError
-      
-      // Try to sign in immediately after signup
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      
-      if (!signInError) {
-        // Sign in successful, redirect to dashboard
+
+      if (authError) {
+        console.log('[v0] Sign up error:', authError.message)
+        throw authError
+      }
+
+      if (authData?.user) {
+        console.log('[v0] Sign up successful, user:', authData.user.id)
+
+        // Create user profile immediately
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: authData.user.id,
+            email: email,
+            full_name: fullName,
+            role: 'client',
+          })
+
+        if (profileError) {
+          console.log('[v0] Profile creation error:', profileError.message)
+          // Don't throw - profile might already exist or be created asynchronously
+        }
+
+        // Wait a moment for session to be established
+        await new Promise(resolve => setTimeout(resolve, 500))
         router.push('/dashboard')
-      } else {
-        // Sign in failed, show success message and ask to login
-        router.push('/auth/sign-up-success')
       }
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'Ocurrió un error')
+      const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error al registrarse'
+      console.log('[v0] Sign up exception:', errorMessage)
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -86,7 +85,7 @@ export default function SignUpPage() {
             <CardHeader>
               <CardTitle className="text-3xl font-bold">Crea tu cuenta</CardTitle>
               <CardDescription>
-                Únete a nuestra plataforma de gestión financiera
+                Únete a Valum y comienza a gestionar tus finanzas
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -97,7 +96,7 @@ export default function SignUpPage() {
                     <Input
                       id="fullName"
                       type="text"
-                      placeholder="Juan García"
+                      placeholder="Tu nombre"
                       required
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
@@ -125,18 +124,6 @@ export default function SignUpPage() {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      disabled={isLoading}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="repeat-password">Confirmar contraseña</Label>
-                    <Input
-                      id="repeat-password"
-                      type="password"
-                      placeholder="••••••••"
-                      required
-                      value={repeatPassword}
-                      onChange={(e) => setRepeatPassword(e.target.value)}
                       disabled={isLoading}
                     />
                   </div>
