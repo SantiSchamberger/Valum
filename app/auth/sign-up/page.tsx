@@ -57,7 +57,7 @@ export default function SignUpPage() {
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -70,8 +70,21 @@ export default function SignUpPage() {
           },
         },
       })
-      if (error) throw error
-      router.push('/auth/sign-up-success')
+      if (signUpError) throw signUpError
+      
+      // Try to sign in immediately after signup
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      
+      if (!signInError) {
+        // Sign in successful, redirect to dashboard
+        router.push('/dashboard')
+      } else {
+        // Sign in failed, show success message and ask to login
+        router.push('/auth/sign-up-success')
+      }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'Ocurrió un error')
     } finally {
