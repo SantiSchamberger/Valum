@@ -22,11 +22,12 @@ export default async function AdminPage() {
     redirect('/dashboard')
   }
 
-  // Get all users
+  // Get all users ordered by role then by name
   const { data: allProfiles } = await supabase
     .from('profiles')
     .select('*')
-    .order('created_at', { ascending: false })
+    .order('role', { ascending: true })
+    .order('full_name', { ascending: true })
 
-  return <AdminClient profiles={allProfiles || []} />
+  return <AdminClient profiles={allProfiles || []} currentUser={profile} />
 }
