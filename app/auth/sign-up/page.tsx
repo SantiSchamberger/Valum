@@ -11,29 +11,15 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-
-const roleLabels: Record<string, string> = {
-  client: 'Cliente',
-  advisor: 'Asesor financiero',
-}
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [repeatPassword, setRepeatPassword] = useState('')
   const [fullName, setFullName] = useState('')
-  const [role, setRole] = useState('client')
-  const [roleSelected, setRoleSelected] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
@@ -66,7 +52,7 @@ export default function SignUpPage() {
             `${window.location.origin}/auth/callback`,
           data: {
             full_name: fullName,
-            role: role,
+            role: 'client',
           },
         },
       })
@@ -129,34 +115,6 @@ export default function SignUpPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       disabled={isLoading}
                     />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="role">Tipo de cuenta</Label>
-                    <Select 
-                      value={role} 
-                      onValueChange={(value) => {
-                        if (!roleSelected && value) {
-                          setRole(value)
-                          setRoleSelected(true)
-                        }
-                      }} 
-                      disabled={isLoading || roleSelected}
-                    >
-                      <SelectTrigger id="role">
-                        <SelectValue placeholder="Selecciona un tipo de cuenta">
-                          {roleLabels[role]}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="client">Cliente</SelectItem>
-                        <SelectItem value="advisor">Asesor financiero</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {roleSelected && (
-                      <p className="text-xs text-muted-foreground">
-                        El tipo de cuenta no puede cambiar después de la creación
-                      </p>
-                    )}
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="password">Contraseña</Label>
