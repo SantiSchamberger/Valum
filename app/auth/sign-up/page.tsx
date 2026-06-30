@@ -18,6 +18,7 @@ import { useState } from 'react'
 export default function SignUpPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [fullName, setFullName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -25,9 +26,22 @@ export default function SignUpPage() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
+
+    // Validate passwords match
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden')
+      return
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres')
+      return
+    }
+
     const supabase = createClient()
     setIsLoading(true)
-    setError(null)
 
     try {
       // Sign up user
@@ -64,9 +78,21 @@ export default function SignUpPage() {
           // Don't throw - profile might already exist or be created asynchronously
         }
 
-        // Wait a moment for session to be established
+        // Wait for session to be fully established
+        await new Promise(resolve => setTimeout(resolve, 1000))
+
+        // Refresh the session to ensure cookies are synced
+        const { error: refreshError } = await supabase.auth.refreshSession()
+        if (refreshError) {
+          console.log('[v0] Session refresh error:', refreshError.message)
+        }
+
+        console.log('[v0] Attempting redirect to /dashboard')
+
+        // Wait a moment before redirect to ensure all cookies are set
         await new Promise(resolve => setTimeout(resolve, 500))
-        router.push('/dashboard')
+
+        router.replace('/dashboard')
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error al registrarse'
@@ -124,6 +150,18 @@ export default function SignUpPage() {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
                       disabled={isLoading}
                     />
                   </div>
