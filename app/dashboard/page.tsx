@@ -35,11 +35,15 @@ export default async function DashboardPage() {
       avatar_url: null,
     }
     
-    const { data: createdProfile } = await supabase
+    const { data: createdProfile, error: insertError } = await supabase
       .from('profiles')
       .insert(newProfile)
       .select('*')
       .single()
+
+    if (insertError) {
+      console.error('[Dashboard] Fallback profile creation error:', insertError)
+    }
 
     profile = createdProfile
   }
