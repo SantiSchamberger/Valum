@@ -29,13 +29,13 @@ export default async function HomePage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Link href="/auth/login">
-                <Button variant="ghost" size="sm">
+              <Link href="/auth/login" className="cursor-pointer">
+                <Button variant="ghost" size="sm" className="cursor-pointer hover:bg-muted">
                   Inicia sesión
                 </Button>
               </Link>
-              <Link href="/auth/sign-up">
-                <Button size="sm">
+              <Link href="/auth/sign-up" className="cursor-pointer">
+                <Button size="sm" className="cursor-pointer hover:opacity-90 transition-opacity">
                   Regístrate
                 </Button>
               </Link>
@@ -54,13 +54,13 @@ export default async function HomePage() {
             Controla tus finanzas, analiza tus gastos y recibe asesoramiento profesional en una sola plataforma amigable e intuitiva.
           </p>
           <div className="flex justify-center gap-4 pt-4">
-            <Link href="/auth/sign-up">
-              <Button size="lg" className="text-lg">
+            <Link href="/auth/sign-up" className="cursor-pointer">
+              <Button size="lg" className="text-lg cursor-pointer hover:opacity-90 transition-opacity shadow-lg">
                 Comenzar Gratis
               </Button>
             </Link>
-            <Link href="/auth/login">
-              <Button size="lg" variant="outline" className="text-lg">
+            <Link href="/auth/login" className="cursor-pointer">
+              <Button size="lg" variant="outline" className="text-lg cursor-pointer hover:bg-muted transition-colors">
                 Inicia sesión
               </Button>
             </Link>
@@ -69,132 +69,124 @@ export default async function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center mb-12">
-          <h3 className="text-3xl font-bold text-foreground mb-4">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 bg-gradient-to-b from-background to-background">
+        <div className="text-center mb-16">
+          <h3 className="text-4xl font-bold text-foreground mb-4">
             Características principales
           </h3>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-foreground/70 max-w-2xl mx-auto">
             Todo lo que necesitas para gestionar tus finanzas de forma inteligente
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {/* Feature 1 */}
-          <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent hover:shadow-xl hover:border-primary/40 transition-all hover:scale-105">
-            <CardHeader>
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <BarChart3 className="w-6 h-6 text-primary" />
+          <div className="group cursor-pointer">
+            <div className="h-full rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 hover:shadow-xl transition-all duration-300 hover:border-primary/50">
+              <div className="w-14 h-14 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <BarChart3 className="w-8 h-8 text-primary" />
               </div>
-              <CardTitle>Análisis Detallado</CardTitle>
-              <CardDescription>Gráficos y reportes visuales de tus gastos</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Visualiza tus patrones de gastos con gráficos interactivos y análisis comparativos.
+              <h4 className="text-xl font-bold text-foreground mb-2">
+                Análisis Detallado
+              </h4>
+              <p className="text-foreground/70">
+                Visualiza tus patrones de gastos con gráficos interactivos y análisis comparativos en tiempo real.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Feature 2 */}
-          <Card className="border-2 border-secondary/20 bg-gradient-to-br from-secondary/5 to-transparent hover:shadow-xl hover:border-secondary/40 transition-all hover:scale-105">
-            <CardHeader>
-              <div className="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center mb-4">
-                <Users className="w-6 h-6 text-secondary" />
+          <div className="group cursor-pointer">
+            <div className="h-full rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 hover:shadow-xl transition-all duration-300 hover:border-secondary/50">
+              <div className="w-14 h-14 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Users className="w-8 h-8 text-secondary" />
               </div>
-              <CardTitle>Asesoría Profesional</CardTitle>
-              <CardDescription>Conecta con asesores financieros expertos</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Obtén recomendaciones personalizadas de profesionales con experiencia en finanzas.
+              <h4 className="text-xl font-bold text-foreground mb-2">
+                Asesoría Profesional
+              </h4>
+              <p className="text-foreground/70">
+                Conecta con asesores financieros expertos y obtén recomendaciones personalizadas para tu situación.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Feature 3 */}
-          <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent hover:shadow-xl hover:border-primary/40 transition-all hover:scale-105">
-            <CardHeader>
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <Zap className="w-6 h-6 text-primary" />
+          <div className="group cursor-pointer">
+            <div className="h-full rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 hover:shadow-xl transition-all duration-300 hover:border-primary/50">
+              <div className="w-14 h-14 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Zap className="w-8 h-8 text-primary" />
               </div>
-              <CardTitle>Gestión Rápida</CardTitle>
-              <CardDescription>Registra transacciones en segundos</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Interfaz intuitiva que te permite registrar ingresos y gastos de forma rápida.
+              <h4 className="text-xl font-bold text-foreground mb-2">
+                Gestión Rápida
+              </h4>
+              <p className="text-foreground/70">
+                Registra transacciones en segundos con nuestra interfaz intuitiva y amigable.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Feature 4 */}
-          <Card className="border-2 border-secondary/20 bg-gradient-to-br from-secondary/5 to-transparent hover:shadow-xl hover:border-secondary/40 transition-all hover:scale-105">
-            <CardHeader>
-              <div className="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center mb-4">
-                <Lock className="w-6 h-6 text-secondary" />
+          <div className="group cursor-pointer">
+            <div className="h-full rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 hover:shadow-xl transition-all duration-300 hover:border-secondary/50">
+              <div className="w-14 h-14 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Lock className="w-8 h-8 text-secondary" />
               </div>
-              <CardTitle>Datos Seguros</CardTitle>
-              <CardDescription>Encriptación de nivel empresarial</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Tu información está protegida con la máxima seguridad y privacidad garantizada.
+              <h4 className="text-xl font-bold text-foreground mb-2">
+                Datos Seguros
+              </h4>
+              <p className="text-foreground/70">
+                Tu información está protegida con encriptación de nivel empresarial y privacidad garantizada.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Feature 5 */}
-          <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent hover:shadow-xl hover:border-primary/40 transition-all hover:scale-105">
-            <CardHeader>
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                <TrendingUp className="w-6 h-6 text-primary" />
+          <div className="group cursor-pointer">
+            <div className="h-full rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 hover:shadow-xl transition-all duration-300 hover:border-primary/50">
+              <div className="w-14 h-14 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <TrendingUp className="w-8 h-8 text-primary" />
               </div>
-              <CardTitle>Metas Financieras</CardTitle>
-              <CardDescription>Establece y alcanza tus objetivos</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Define presupuestos y metas para mejorar tu situación financiera.
+              <h4 className="text-xl font-bold text-foreground mb-2">
+                Metas Financieras
+              </h4>
+              <p className="text-foreground/70">
+                Define presupuestos y metas claras para mejorar continuamente tu situación financiera.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Feature 6 */}
-          <Card className="border-2 border-secondary/20 bg-gradient-to-br from-secondary/5 to-transparent hover:shadow-xl hover:border-secondary/40 transition-all hover:scale-105">
-            <CardHeader>
-              <div className="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center mb-4">
-                <Shield className="w-6 h-6 text-secondary" />
+          <div className="group cursor-pointer">
+            <div className="h-full rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 hover:shadow-xl transition-all duration-300 hover:border-secondary/50">
+              <div className="w-14 h-14 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Shield className="w-8 h-8 text-secondary" />
               </div>
-              <CardTitle>Notificaciones</CardTitle>
-              <CardDescription>Alertas personalizadas en tiempo real</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Recibe notificaciones sobre movimientos importantes y cambios en tu cuenta.
+              <h4 className="text-xl font-bold text-foreground mb-2">
+                Notificaciones
+              </h4>
+              <p className="text-foreground/70">
+                Recibe alertas personalizadas en tiempo real sobre movimientos importantes en tu cuenta.
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <Card className="border-2 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10">
-          <CardContent className="pt-12 pb-12 text-center">
-            <h3 className="text-3xl font-bold text-foreground mb-4">
-              ¿Listo para mejorar tus finanzas?
-            </h3>
-            <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
-              Únete a miles de usuarios que ya están transformando su relación con el dinero.
-            </p>
-            <Link href="/auth/sign-up">
-              <Button size="lg" className="text-lg">
-                Crear Cuenta Gratuita
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="rounded-2xl bg-gradient-to-r from-primary to-secondary p-12 md:p-16 text-center text-white shadow-2xl">
+          <h3 className="text-4xl font-bold mb-4">
+            ¿Listo para mejorar tus finanzas?
+          </h3>
+          <p className="text-white/90 max-w-2xl mx-auto mb-10 text-lg">
+            Únete a miles de usuarios que ya están transformando su relación con el dinero. Sin verificación de email, acceso inmediato.
+          </p>
+          <Link href="/auth/sign-up" className="cursor-pointer inline-block">
+            <Button size="lg" className="text-lg bg-white text-primary hover:bg-white/90 cursor-pointer transition-all shadow-lg">
+              Crear Cuenta Gratuita
+            </Button>
+          </Link>
+        </div>
       </section>
 
       {/* Footer */}
@@ -205,13 +197,13 @@ export default async function HomePage() {
               © 2026 Valum. Todos los derechos reservados.
             </p>
             <div className="flex gap-6">
-              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="#" className="text-sm text-foreground/70 hover:text-foreground cursor-pointer transition-colors">
                 Privacidad
               </Link>
-              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="#" className="text-sm text-foreground/70 hover:text-foreground cursor-pointer transition-colors">
                 Términos
               </Link>
-              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="#" className="text-sm text-foreground/70 hover:text-foreground cursor-pointer transition-colors">
                 Contacto
               </Link>
             </div>
