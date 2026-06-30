@@ -252,7 +252,7 @@ export default function AdminClient({
                                 <Label htmlFor={`role-${profile.id}`} className="sr-only">Nuevo rol</Label>
                                 <Select
                                   value={pendingRole}
-                                  onValueChange={setPendingRole}
+                                  onValueChange={(value) => { if (value) setPendingRole(value) }}
                                 >
                                   <SelectTrigger id={`role-${profile.id}`} className="h-9">
                                     <SelectValue>
