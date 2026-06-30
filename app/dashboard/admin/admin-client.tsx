@@ -220,7 +220,9 @@ export default function AdminClient({ profiles }: { profiles: Profile[] }) {
                                   <Label htmlFor="role-select">Nuevo Rol</Label>
                                   <Select value={newRole} onValueChange={(value: any) => setNewRole(value)}>
                                     <SelectTrigger id="role-select">
-                                      <SelectValue />
+                                      <SelectValue>
+                                        {roleLabels[newRole]}
+                                      </SelectValue>
                                     </SelectTrigger>
                                     <SelectContent>
                                       <SelectItem value="client">Cliente</SelectItem>

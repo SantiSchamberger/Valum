@@ -49,6 +49,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Crear categorías por defecto para el nuevo usuario
+    const defaultCategories = [
+      { user_id: user.id, name: 'Alimentación', color: '#10B981', icon: 'tag' },
+      { user_id: user.id, name: 'Transporte', color: '#3B82F6', icon: 'tag' },
+      { user_id: user.id, name: 'Vivienda', color: '#F59E0B', icon: 'tag' },
+      { user_id: user.id, name: 'Entretenimiento', color: '#EF4444', icon: 'tag' },
+      { user_id: user.id, name: 'Salud', color: '#8B5CF6', icon: 'tag' },
+      { user_id: user.id, name: 'Otros', color: '#14B8A6', icon: 'tag' },
+    ]
+
+    const { error: categoriesError } = await supabase
+      .from('categories')
+      .insert(defaultCategories)
+
+    if (categoriesError) {
+      console.error('[API] Error inserting default categories:', categoriesError)
+    }
+
     return NextResponse.json(
       { message: 'Profile created successfully', profile: newProfile },
       { status: 201 }

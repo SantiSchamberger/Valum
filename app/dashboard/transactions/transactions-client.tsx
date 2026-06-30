@@ -175,7 +175,9 @@ export default function TransactionsClient({
                       }}
                     >
                       <SelectTrigger id="type">
-                        <SelectValue />
+                        <SelectValue>
+                          {formData.type === 'income' ? 'Ingreso' : 'Gasto'}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="income">Ingreso</SelectItem>
