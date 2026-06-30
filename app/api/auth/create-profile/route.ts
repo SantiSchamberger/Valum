@@ -49,13 +49,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Crear categorías por defecto para el nuevo usuario
+    // Crear categorías por defecto para el nuevo usuario (Ingresos y Gastos)
     const defaultCategories = [
-      { user_id: user.id, name: 'Alimentación', color: '#10B981', icon: 'tag' },
-      { user_id: user.id, name: 'Transporte', color: '#3B82F6', icon: 'tag' },
-      { user_id: user.id, name: 'Vivienda', color: '#F59E0B', icon: 'tag' },
-      { user_id: user.id, name: 'Entretenimiento', color: '#EF4444', icon: 'tag' },
-      { user_id: user.id, name: 'Salud', color: '#8B5CF6', icon: 'tag' },
+      // Ingresos
+      { user_id: user.id, name: 'Sueldo / Salario', color: '#10B981', icon: 'tag' },
+      { user_id: user.id, name: 'Ingresos Extra / Freelance', color: '#34D399', icon: 'tag' },
+      { user_id: user.id, name: 'Inversiones / Dividendos', color: '#059669', icon: 'tag' },
+      
+      // Gastos Fijos
+      { user_id: user.id, name: 'Vivienda / Alquiler', color: '#F59E0B', icon: 'tag' },
+      { user_id: user.id, name: 'Servicios (Luz, Gas, Internet)', color: '#D97706', icon: 'tag' },
+      { user_id: user.id, name: 'Transporte / Seguro', color: '#3B82F6', icon: 'tag' },
+      
+      // Gastos Variables
+      { user_id: user.id, name: 'Alimentación / Supermercado', color: '#22C55E', icon: 'tag' },
+      { user_id: user.id, name: 'Ocio / Entretenimiento', color: '#EF4444', icon: 'tag' },
+      { user_id: user.id, name: 'Salud / Farmacia', color: '#8B5CF6', icon: 'tag' },
+      { user_id: user.id, name: 'Suscripciones Digitales', color: '#EC4899', icon: 'tag' },
       { user_id: user.id, name: 'Otros', color: '#14B8A6', icon: 'tag' },
     ]
 
