@@ -76,7 +76,7 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
                 <Wallet className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-xl text-foreground">FinanceHub</h1>
+                <h1 className="font-bold text-xl text-foreground">Valum</h1>
                 <p className="text-xs text-muted-foreground">Gestión Financiera</p>
               </div>
             </div>

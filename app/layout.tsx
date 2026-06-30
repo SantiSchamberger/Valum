@@ -10,8 +10,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'FinanceHub - Gestión Financiera Inteligente',
-  description: 'Plataforma de gestión financiera personal con análisis avanzado y asesoría profesional',
+  title: 'Valum - Tu Plataforma Financiera',
+  description: 'Gestiona tus finanzas personales con análisis avanzado y asesoría profesional en una sola plataforma',
   generator: 'v0.app',
   icons: {
     icon: [

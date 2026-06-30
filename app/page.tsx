@@ -25,7 +25,7 @@ export default async function HomePage() {
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-xl text-foreground">FinanceHub</h1>
+                <h1 className="font-bold text-xl text-foreground">Valum</h1>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -202,7 +202,7 @@ export default async function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex justify-between items-center">
             <p className="text-sm text-muted-foreground">
-              © 2024 FinanceHub. Todos los derechos reservados.
+              © 2024 Valum. Todos los derechos reservados.
             </p>
             <div className="flex gap-6">
               <Link href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
