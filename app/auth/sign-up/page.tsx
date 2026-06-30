@@ -56,12 +56,14 @@ export default function SignUpPage() {
       })
 
       if (authError) {
-        console.log('[v0] Sign up error:', authError.message)
-        throw authError
+        const errorMessage = authError.message || JSON.stringify(authError)
+        console.log('[v0] Sign up error:', errorMessage)
+        throw new Error(errorMessage)
       }
 
       if (authData?.user) {
         console.log('[v0] Sign up successful, user:', authData.user.id)
+        console.log('[v0] User needs confirmation:', authData.user.user_metadata?.email_verified === false)
 
         // Create user profile immediately
         const { error: profileError } = await supabase
@@ -76,6 +78,12 @@ export default function SignUpPage() {
         if (profileError) {
           console.log('[v0] Profile creation error:', profileError.message)
           // Don't throw - profile might already exist or be created asynchronously
+        }
+
+        // Check if email confirmation is required
+        if (authData.user.user_metadata?.email_verified === false) {
+          setError('Por favor confirma tu correo electrónico antes de continuar')
+          return
         }
 
         // Wait for session to be fully established
