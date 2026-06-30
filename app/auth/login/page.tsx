@@ -41,19 +41,23 @@ export default function LoginPage() {
       
       if (data?.user) {
         console.log('[v0] Login successful, user:', data.user.id)
+        console.log('[v0] Session data:', data.session)
         
-        // Wait for session to be fully established
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // Wait for initial session establishment
+        await new Promise(resolve => setTimeout(resolve, 500))
         
-        // Refresh the session to ensure cookies are synced
-        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
-        if (refreshError) {
-          console.log('[v0] Session refresh error:', refreshError.message)
-        }
+        // Get the current session
+        const { data: sessionData } = await supabase.auth.getSession()
+        console.log('[v0] Current session after login:', sessionData?.session ? 'exists' : 'missing')
+        
+        // Manually refresh the session to sync cookies
+        await supabase.auth.refreshSession()
         
         console.log('[v0] Attempting redirect to /dashboard')
         
-        // Use router.replace instead of router.push to avoid back navigation issues
+        // Use a small delay before redirect to ensure all cookies are set
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
         router.replace('/dashboard')
       }
     } catch (error: unknown) {
