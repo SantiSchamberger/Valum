@@ -57,54 +57,45 @@ export default function SignUpPage() {
 
       if (authError) {
         const errorMessage = authError.message || JSON.stringify(authError)
-        console.log('[v0] Sign up error:', errorMessage)
+        console.log('[SignUp] Auth error:', errorMessage)
         throw new Error(errorMessage)
       }
 
-      if (authData?.user) {
-        console.log('[v0] Sign up successful, user:', authData.user.id)
-        console.log('[v0] User needs confirmation:', authData.user.user_metadata?.email_verified === false)
-
-        // Create user profile immediately
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: authData.user.id,
-            email: email,
-            full_name: fullName,
-            role: 'client',
-          })
-
-        if (profileError) {
-          console.log('[v0] Profile creation error:', profileError.message)
-          // Don't throw - profile might already exist or be created asynchronously
-        }
-
-        // Check if email confirmation is required
-        if (authData.user.user_metadata?.email_verified === false) {
-          setError('Por favor confirma tu correo electrónico antes de continuar')
-          return
-        }
-
-        // Wait for session to be fully established
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        // Refresh the session to ensure cookies are synced
-        const { error: refreshError } = await supabase.auth.refreshSession()
-        if (refreshError) {
-          console.log('[v0] Session refresh error:', refreshError.message)
-        }
-
-        console.log('[v0] Attempting redirect to /dashboard')
-
-        // Wait a moment before redirect to ensure all cookies are set
-        await new Promise(resolve => setTimeout(resolve, 500))
-
-        router.replace('/dashboard')
+      if (!authData?.user) {
+        throw new Error('No se pudo crear la cuenta')
       }
+
+      console.log('[SignUp] User created:', authData.user.id)
+
+      // Wait for session to be established
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      // Create profile via server endpoint
+      try {
+        const profileResponse = await fetch('/api/auth/create-profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        })
+
+        if (!profileResponse.ok) {
+          console.log('[SignUp] Profile creation failed:', profileResponse.status)
+          // Don't fail signup if profile creation fails - it might be created by trigger
+        } else {
+          console.log('[SignUp] Profile created successfully')
+        }
+      } catch (profileError) {
+        console.log('[SignUp] Profile creation error:', profileError)
+        // Continue anyway
+      }
+
+      // Wait before redirect
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      console.log('[SignUp] Redirecting to dashboard')
+      router.replace('/dashboard')
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error al registrarse'
-      console.log('[v0] Sign up exception:', errorMessage)
+      console.log('[SignUp] Exception:', errorMessage)
       setError(errorMessage)
     } finally {
       setIsLoading(false)
