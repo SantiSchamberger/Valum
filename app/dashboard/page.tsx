@@ -2,6 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import DashboardClient from './dashboard-client'
 
+// Disable caching for this page so middleware always runs
+export const revalidate = 0
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   
