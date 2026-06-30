@@ -84,7 +84,7 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
               <div className="text-right hidden sm:block">
                 <p className="font-medium text-sm text-foreground">{profile.full_name || user.email}</p>
                 <p className="text-xs text-muted-foreground capitalize">
-                  {profile.role === 'advisor' ? 'Asesor Financiero' : 'Cliente'}
+                  {profile.role === 'advisor' ? 'Asesor Financiero' : profile.role === 'admin' ? 'Administrador' : 'Cliente'}
                 </p>
               </div>
               <Button 
@@ -175,7 +175,7 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
               <CardDescription>Gestiona tus transacciones y datos</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              <div className="flex flex-col gap-4">
                 <Link href="/dashboard/transactions">
                   <Button className="w-full" size="lg">
                     <Plus className="w-4 h-4 mr-2" />
@@ -204,6 +204,13 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
                   <Link href="/dashboard/clients">
                     <Button variant="outline" className="w-full" size="lg">
                       Mis Clientes
+                    </Button>
+                  </Link>
+                )}
+                {profile.role === 'admin' && (
+                  <Link href="/dashboard/admin">
+                    <Button variant="outline" className="w-full border-purple-500 text-purple-600 hover:bg-purple-50 hover:text-purple-700" size="lg">
+                      Panel de Administración
                     </Button>
                   </Link>
                 )}
