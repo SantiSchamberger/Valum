@@ -11,13 +11,6 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -27,7 +20,6 @@ export default function SignUpPage() {
   const [password, setPassword] = useState('')
   const [repeatPassword, setRepeatPassword] = useState('')
   const [fullName, setFullName] = useState('')
-  const [role, setRole] = useState('client')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
@@ -51,7 +43,7 @@ export default function SignUpPage() {
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -60,12 +52,25 @@ export default function SignUpPage() {
             `${window.location.origin}/auth/callback`,
           data: {
             full_name: fullName,
-            role: role,
+            role: 'client',
           },
         },
       })
-      if (error) throw error
-      router.push('/auth/sign-up-success')
+      if (signUpError) throw signUpError
+      
+      // Try to sign in immediately after signup
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      
+      if (!signInError) {
+        // Sign in successful, redirect to dashboard
+        router.push('/dashboard')
+      } else {
+        // Sign in failed, show success message and ask to login
+        router.push('/auth/sign-up-success')
+      }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'Ocurrió un error')
     } finally {
@@ -110,18 +115,6 @@ export default function SignUpPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       disabled={isLoading}
                     />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="role">Tipo de cuenta</Label>
-                    <Select value={role} onValueChange={(value) => value && setRole(value)} disabled={isLoading}>
-                      <SelectTrigger id="role">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="client">Cliente</SelectItem>
-                        <SelectItem value="advisor">Asesor financiero</SelectItem>
-                      </SelectContent>
-                    </Select>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="password">Contraseña</Label>
