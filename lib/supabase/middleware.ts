@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
-  // 1. Crear una respuesta inicial
+  // 1. Crear una respuesta iniciaal
   let response = NextResponse.next({
     request: {
       headers: request.headers,
