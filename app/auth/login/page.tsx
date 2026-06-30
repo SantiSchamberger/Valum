@@ -41,9 +41,20 @@ export default function LoginPage() {
       
       if (data?.user) {
         console.log('[v0] Login successful, user:', data.user.id)
-        // Wait a moment for session to be established
-        await new Promise(resolve => setTimeout(resolve, 500))
-        router.push('/dashboard')
+        
+        // Wait for session to be fully established
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        // Refresh the session to ensure cookies are synced
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+        if (refreshError) {
+          console.log('[v0] Session refresh error:', refreshError.message)
+        }
+        
+        console.log('[v0] Attempting redirect to /dashboard')
+        
+        // Use router.replace instead of router.push to avoid back navigation issues
+        router.replace('/dashboard')
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error al iniciar sesión'
