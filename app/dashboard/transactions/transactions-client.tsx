@@ -168,7 +168,11 @@ export default function TransactionsClient({
                     <Label htmlFor="type">Tipo</Label>
                     <Select 
                       value={formData.type} 
-                      onValueChange={(value) => setFormData({...formData, type: value as 'income' | 'expense'})}
+                      onValueChange={(value) => {
+                        if (value === 'income' || value === 'expense') {
+                          setFormData({...formData, type: value})
+                        }
+                      }}
                     >
                       <SelectTrigger id="type">
                         <SelectValue />
@@ -208,7 +212,7 @@ export default function TransactionsClient({
                     <Label htmlFor="category">Categoría</Label>
                     <Select 
                       value={formData.categoryId} 
-                      onValueChange={(value) => setFormData({...formData, categoryId: value})}
+                      onValueChange={(value) => value && setFormData({...formData, categoryId: value})}
                     >
                       <SelectTrigger id="category">
                         <SelectValue placeholder="Selecciona una categoría" />
