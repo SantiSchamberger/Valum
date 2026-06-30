@@ -48,7 +48,7 @@ export default async function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="space-y-6 text-center mb-12">
           <h2 className="text-5xl md:text-6xl font-bold text-foreground leading-tight">
-            Tu plataforma de <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">gestión financiera</span>
+            Tu plataforma de <span className="text-primary">gestión financiera</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Controla tus finanzas, analiza tus gastos y recibe asesoramiento profesional en una sola plataforma amigable e intuitiva.
@@ -81,7 +81,7 @@ export default async function HomePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Feature 1 */}
-          <Card className="border-2 hover:shadow-lg transition-all hover:scale-105">
+          <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent hover:shadow-xl hover:border-primary/40 transition-all hover:scale-105">
             <CardHeader>
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                 <BarChart3 className="w-6 h-6 text-primary" />
@@ -97,7 +97,7 @@ export default async function HomePage() {
           </Card>
 
           {/* Feature 2 */}
-          <Card className="border-2 hover:shadow-lg transition-all hover:scale-105">
+          <Card className="border-2 border-secondary/20 bg-gradient-to-br from-secondary/5 to-transparent hover:shadow-xl hover:border-secondary/40 transition-all hover:scale-105">
             <CardHeader>
               <div className="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center mb-4">
                 <Users className="w-6 h-6 text-secondary" />
@@ -113,7 +113,7 @@ export default async function HomePage() {
           </Card>
 
           {/* Feature 3 */}
-          <Card className="border-2 hover:shadow-lg transition-all hover:scale-105">
+          <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent hover:shadow-xl hover:border-primary/40 transition-all hover:scale-105">
             <CardHeader>
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                 <Zap className="w-6 h-6 text-primary" />
@@ -129,7 +129,7 @@ export default async function HomePage() {
           </Card>
 
           {/* Feature 4 */}
-          <Card className="border-2 hover:shadow-lg transition-all hover:scale-105">
+          <Card className="border-2 border-secondary/20 bg-gradient-to-br from-secondary/5 to-transparent hover:shadow-xl hover:border-secondary/40 transition-all hover:scale-105">
             <CardHeader>
               <div className="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center mb-4">
                 <Lock className="w-6 h-6 text-secondary" />
@@ -145,7 +145,7 @@ export default async function HomePage() {
           </Card>
 
           {/* Feature 5 */}
-          <Card className="border-2 hover:shadow-lg transition-all hover:scale-105">
+          <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent hover:shadow-xl hover:border-primary/40 transition-all hover:scale-105">
             <CardHeader>
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                 <TrendingUp className="w-6 h-6 text-primary" />
@@ -161,7 +161,7 @@ export default async function HomePage() {
           </Card>
 
           {/* Feature 6 */}
-          <Card className="border-2 hover:shadow-lg transition-all hover:scale-105">
+          <Card className="border-2 border-secondary/20 bg-gradient-to-br from-secondary/5 to-transparent hover:shadow-xl hover:border-secondary/40 transition-all hover:scale-105">
             <CardHeader>
               <div className="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center mb-4">
                 <Shield className="w-6 h-6 text-secondary" />
@@ -202,7 +202,7 @@ export default async function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex justify-between items-center">
             <p className="text-sm text-muted-foreground">
-              © 2024 Valum. Todos los derechos reservados.
+              © 2026 Valum. Todos los derechos reservados.
             </p>
             <div className="flex gap-6">
               <Link href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
