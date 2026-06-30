@@ -80,91 +80,91 @@ export default async function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {/* Feature 1 */}
+          {/* Feature 1 - Blue */}
           <div className="group cursor-pointer">
-            <div className="h-full rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 hover:shadow-xl transition-all duration-300 hover:border-primary/50">
-              <div className="w-14 h-14 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <BarChart3 className="w-8 h-8 text-primary" />
+            <div className="h-full rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/40 border-2 border-blue-300 dark:border-blue-700 p-8 hover:shadow-2xl hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300">
+              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg">
+                <BarChart3 className="w-9 h-9 text-white" />
               </div>
-              <h4 className="text-xl font-bold text-foreground mb-2">
+              <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
                 Análisis Detallado
               </h4>
-              <p className="text-foreground/70">
+              <p className="text-slate-700 dark:text-slate-200 font-medium leading-relaxed">
                 Visualiza tus patrones de gastos con gráficos interactivos y análisis comparativos en tiempo real.
               </p>
             </div>
           </div>
 
-          {/* Feature 2 */}
+          {/* Feature 2 - Green */}
           <div className="group cursor-pointer">
-            <div className="h-full rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 hover:shadow-xl transition-all duration-300 hover:border-secondary/50">
-              <div className="w-14 h-14 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Users className="w-8 h-8 text-secondary" />
+            <div className="h-full rounded-2xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/50 dark:to-green-900/40 border-2 border-green-300 dark:border-green-700 p-8 hover:shadow-2xl hover:border-green-400 dark:hover:border-green-500 transition-all duration-300">
+              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-green-500 to-green-700 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg">
+                <Users className="w-9 h-9 text-white" />
               </div>
-              <h4 className="text-xl font-bold text-foreground mb-2">
+              <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
                 Asesoría Profesional
               </h4>
-              <p className="text-foreground/70">
+              <p className="text-slate-700 dark:text-slate-200 font-medium leading-relaxed">
                 Conecta con asesores financieros expertos y obtén recomendaciones personalizadas para tu situación.
               </p>
             </div>
           </div>
 
-          {/* Feature 3 */}
+          {/* Feature 3 - Blue */}
           <div className="group cursor-pointer">
-            <div className="h-full rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 hover:shadow-xl transition-all duration-300 hover:border-primary/50">
-              <div className="w-14 h-14 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Zap className="w-8 h-8 text-primary" />
+            <div className="h-full rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/40 border-2 border-blue-300 dark:border-blue-700 p-8 hover:shadow-2xl hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300">
+              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg">
+                <Zap className="w-9 h-9 text-white" />
               </div>
-              <h4 className="text-xl font-bold text-foreground mb-2">
+              <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
                 Gestión Rápida
               </h4>
-              <p className="text-foreground/70">
+              <p className="text-slate-700 dark:text-slate-200 font-medium leading-relaxed">
                 Registra transacciones en segundos con nuestra interfaz intuitiva y amigable.
               </p>
             </div>
           </div>
 
-          {/* Feature 4 */}
+          {/* Feature 4 - Green */}
           <div className="group cursor-pointer">
-            <div className="h-full rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 hover:shadow-xl transition-all duration-300 hover:border-secondary/50">
-              <div className="w-14 h-14 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Lock className="w-8 h-8 text-secondary" />
+            <div className="h-full rounded-2xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/50 dark:to-green-900/40 border-2 border-green-300 dark:border-green-700 p-8 hover:shadow-2xl hover:border-green-400 dark:hover:border-green-500 transition-all duration-300">
+              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-green-500 to-green-700 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg">
+                <Lock className="w-9 h-9 text-white" />
               </div>
-              <h4 className="text-xl font-bold text-foreground mb-2">
+              <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
                 Datos Seguros
               </h4>
-              <p className="text-foreground/70">
+              <p className="text-slate-700 dark:text-slate-200 font-medium leading-relaxed">
                 Tu información está protegida con encriptación de nivel empresarial y privacidad garantizada.
               </p>
             </div>
           </div>
 
-          {/* Feature 5 */}
+          {/* Feature 5 - Blue */}
           <div className="group cursor-pointer">
-            <div className="h-full rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 hover:shadow-xl transition-all duration-300 hover:border-primary/50">
-              <div className="w-14 h-14 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <TrendingUp className="w-8 h-8 text-primary" />
+            <div className="h-full rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/40 border-2 border-blue-300 dark:border-blue-700 p-8 hover:shadow-2xl hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300">
+              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg">
+                <TrendingUp className="w-9 h-9 text-white" />
               </div>
-              <h4 className="text-xl font-bold text-foreground mb-2">
+              <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
                 Metas Financieras
               </h4>
-              <p className="text-foreground/70">
+              <p className="text-slate-700 dark:text-slate-200 font-medium leading-relaxed">
                 Define presupuestos y metas claras para mejorar continuamente tu situación financiera.
               </p>
             </div>
           </div>
 
-          {/* Feature 6 */}
+          {/* Feature 6 - Green */}
           <div className="group cursor-pointer">
-            <div className="h-full rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 hover:shadow-xl transition-all duration-300 hover:border-secondary/50">
-              <div className="w-14 h-14 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Shield className="w-8 h-8 text-secondary" />
+            <div className="h-full rounded-2xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/50 dark:to-green-900/40 border-2 border-green-300 dark:border-green-700 p-8 hover:shadow-2xl hover:border-green-400 dark:hover:border-green-500 transition-all duration-300">
+              <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-green-500 to-green-700 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg">
+                <Shield className="w-9 h-9 text-white" />
               </div>
-              <h4 className="text-xl font-bold text-foreground mb-2">
+              <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
                 Notificaciones
               </h4>
-              <p className="text-foreground/70">
+              <p className="text-slate-700 dark:text-slate-200 font-medium leading-relaxed">
                 Recibe alertas personalizadas en tiempo real sobre movimientos importantes en tu cuenta.
               </p>
             </div>
