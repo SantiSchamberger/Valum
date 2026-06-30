@@ -113,7 +113,7 @@ export default function SignUpPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="role">Tipo de cuenta</Label>
-                    <Select value={role} onValueChange={setRole} disabled={isLoading}>
+                    <Select value={role} onValueChange={(value) => value && setRole(value)} disabled={isLoading}>
                       <SelectTrigger id="role">
                         <SelectValue />
                       </SelectTrigger>
