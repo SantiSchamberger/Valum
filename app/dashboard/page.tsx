@@ -11,6 +11,7 @@ export default async function DashboardPage() {
   const { data: { user }, error: userError } = await supabase.auth.getUser()
 
   if (userError || !user) {
+    console.log('[Dashboard] No session or error. User:', user?.id, 'Error:', userError?.message || userError)
     redirect('/auth/login')
   }
 
