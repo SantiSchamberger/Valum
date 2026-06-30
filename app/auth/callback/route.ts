@@ -1,4 +1,3 @@
-// app/auth/callback/route.ts
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 
@@ -13,8 +12,14 @@ export async function GET(request: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
+          // Necesario para que TypeScript deje de dar error
+          getAll() {
+            return [] // En el callback, solo necesitamos setear, no leer
+          },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+            cookiesToSet.forEach(({ name, value, options }) => 
+              response.cookies.set(name, value, options)
+            )
           },
         },
       }
