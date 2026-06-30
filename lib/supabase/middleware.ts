@@ -14,19 +14,23 @@ export async function updateSession(request: NextRequest) {
     {
       cookies: {
         getAll() {
-          return request.cookies.getAll()
+          const cookies = request.cookies.getAll()
+          console.log('[MIDDLEWARE] Available cookies:', cookies.map(c => c.name))
+          return cookies
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value, options }) => {
+            console.log('[MIDDLEWARE] Setting cookie:', name)
             response.cookies.set(name, value, options)
-          )
+          })
         },
       },
     }
   )
 
   // This refreshes a user's session
-  await supabase.auth.getUser()
+  const { data: { user }, error } = await supabase.auth.getUser()
+  console.log('[MIDDLEWARE] User check result:', user?.id || 'no user', error?.message || '')
 
   return response
 }
