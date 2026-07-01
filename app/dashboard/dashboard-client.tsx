@@ -420,9 +420,6 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
             </CardHeader>
             <CardContent className="pb-4">
               <p className="text-lg font-semibold text-foreground">{financialTips[currentTipIndex]}</p>
-              <p className="text-xs text-muted-foreground mt-3">
-                Consejo actualizado cada 10 segundos y sin repetir seguido.
-              </p>
             </CardContent>
           </Card>
 
