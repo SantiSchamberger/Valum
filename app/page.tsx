@@ -7,7 +7,7 @@ import Link from 'next/link'
 
 export default async function HomePage() {
   const supabase = await createClient()
-  
+
   const { data: { user } } = await supabase.auth.getUser()
 
   if (user) {
@@ -21,8 +21,8 @@ export default async function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-white" />
+              <div className="relative w-10 h-10">
+                <Image src="/favicon.ico" alt="Logo de Valum" fill className="object-contain" priority />
               </div>
               <div>
                 <h1 className="font-bold text-xl text-foreground">Valum</h1>
