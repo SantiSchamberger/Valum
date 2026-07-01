@@ -12,20 +12,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Valum - Tu Plataforma Financiera',
   description: 'Gestiona tus finanzas personales con análisis avanzado y asesoría profesional en una sola plataforma',
-  generator: 'v0.app',
   icons: {
     icon: [
       {
-        url: '/icon-light-32x32.png',
+        url: '/favicon.png',
         media: '(prefers-color-scheme: light)',
       },
       {
-        url: '/icon-dark-32x32.png',
+        url: '/favicon.png',
         media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
       },
     ],
     apple: '/apple-icon.png',
