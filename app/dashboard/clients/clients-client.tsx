@@ -27,7 +27,18 @@ export default function ClientsClient({ initialRelations }: ClientsClientProps) 
   const [relations, setRelations] = useState<ClientRelation[]>(initialRelations || [])
   const [isLoading, setIsLoading] = useState<string | null>(null)
   const [referralLink, setReferralLink] = useState('')
+  const [referralLinkByName, setReferralLinkByName] = useState('')
   const [copyStatus, setCopyStatus] = useState('Copiar enlace')
+
+  const slugifyName = (value: string) =>
+    value
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/--+/g, '-')
+      .replace(/^-|-$/g, '')
 
   const handleApprove = async (relationId: string) => {
     setIsLoading(relationId)
@@ -75,8 +86,22 @@ export default function ClientsClient({ initialRelations }: ClientsClientProps) 
     const loadReferralLink = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser()
+
         if (user && typeof window !== 'undefined') {
           setReferralLink(`${window.location.origin}/auth/sign-up?referrer=${encodeURIComponent(user.id)}`)
+
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', user.id)
+            .single()
+
+          if (profile?.full_name) {
+            const nameSlug = slugifyName(profile.full_name)
+            if (nameSlug) {
+              setReferralLinkByName(`${window.location.origin}/auth/sign-up?referrer_name=${encodeURIComponent(nameSlug)}`)
+            }
+          }
         }
       } catch (error) {
         console.error('Error loading referral link:', error)
@@ -86,7 +111,7 @@ export default function ClientsClient({ initialRelations }: ClientsClientProps) 
     loadReferralLink()
   }, [supabase])
 
-  const handleCopyReferralLink = async () => {
+  const handleCopyReferralLink = async (link: string) => {
     if (!referralLink) return
     try {
       await navigator.clipboard.writeText(referralLink)
@@ -143,21 +168,33 @@ export default function ClientsClient({ initialRelations }: ClientsClientProps) 
               <CardTitle className="text-lg font-bold">Enlace de referido</CardTitle>
               <CardDescription>Compartí este link para que un cliente cree su cuenta y te encuentre fácilmente.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
+              <div className="min-w-0 rounded-xl border border-border bg-muted/50 px-3 py-3 text-sm text-foreground break-all">
+                {referralLink || 'Generando enlace automático...'}
+              </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="min-w-0 flex-1 rounded-xl border border-border bg-muted/50 px-3 py-3 text-sm text-foreground break-all">
-                  {referralLink || 'Generando enlace...'}
-                </div>
                 <Button
-                  onClick={handleCopyReferralLink}
+                  onClick={() => handleCopyReferralLink(referralLink)}
                   disabled={!referralLink}
                   className="whitespace-nowrap"
                   size="lg"
                 >
                   <Copy className="w-4 h-4 mr-2" />
-                  {copyStatus}
+                  Copiar enlace automático
                 </Button>
+                {referralLinkByName && (
+                  <Button
+                    onClick={() => handleCopyReferralLink(referralLinkByName)}
+                    disabled={!referralLinkByName}
+                    className="whitespace-nowrap"
+                    size="lg"
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copiar enlace con nombre
+                  </Button>
+                )}
               </div>
+              <p className="text-xs text-muted-foreground">{copyStatus}</p>
             </CardContent>
           </Card>
           {(!relations || relations.length === 0) ? (
@@ -172,7 +209,7 @@ export default function ClientsClient({ initialRelations }: ClientsClientProps) 
                 <p className="text-sm text-muted-foreground mb-6">
                   Los clientes podrán solicitar conectarse contigo
                 </p>
-                <Button onClick={handleCopyReferralLink} disabled={!referralLink} className="gap-2">
+                <Button onClick={() => handleCopyReferralLink(referralLink)} disabled={!referralLink} className="gap-2">
                   <Copy className="w-4 h-4" />
                   Copiar link de referido
                 </Button>

@@ -12,7 +12,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 
 export default function SignUpPage() {
@@ -23,6 +23,7 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -75,9 +76,10 @@ export default function SignUpPage() {
         const profileResponse = await fetch('/api/auth/create-profile', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-        })
-
-        if (!profileResponse.ok) {
+        body: JSON.stringify({
+          referrer: searchParams.get('referrer') || null,
+          referrer_name: searchParams.get('referrer_name') || null,
+        }),
           console.log('[SignUp] Profile creation failed:', profileResponse.status)
           // Don't fail signup if profile creation fails - it might be created by trigger
         } else {

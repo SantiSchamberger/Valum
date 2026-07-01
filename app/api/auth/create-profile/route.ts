@@ -4,7 +4,20 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
-    
+    const body = await request.json().catch(() => null)
+    const referrer = body?.referrer
+    const referrerName = body?.referrer_name
+
+    const slugifyName = (value: string) =>
+      value
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/--+/g, '-')
+        .replace(/^-|-$/g, '')
+
     // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     
@@ -47,6 +60,38 @@ export async function POST(request: NextRequest) {
         { error: profileError.message },
         { status: 400 }
       )
+    }
+
+    // Si hay un referido válido, creamos la relación pendiente entre asesor y cliente.
+    let advisorId: string | null = null
+
+    if (typeof referrer === 'string' && referrer.trim() !== '') {
+      advisorId = referrer.trim()
+    } else if (typeof referrerName === 'string' && referrerName.trim() !== '') {
+      const normalizedReferrerName = slugifyName(referrerName.trim())
+      const { data: advisorProfiles, error: advisorError } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('role', ['advisor', 'admin'])
+
+      if (!advisorError && advisorProfiles) {
+        const matchingAdvisor = advisorProfiles.find(profile =>
+          profile.full_name && slugifyName(profile.full_name) === normalizedReferrerName
+        )
+        if (matchingAdvisor) {
+          advisorId = matchingAdvisor.id
+        }
+      }
+    }
+
+    if (advisorId && advisorId !== user.id) {
+      const { error: relationError } = await supabase
+        .from('advisor_clients')
+        .insert({ advisor_id: advisorId, client_id: user.id, status: 'pending' })
+
+      if (relationError) {
+        console.error('[API] Referral relation error:', relationError)
+      }
     }
 
     // Crear categorías por defecto para el nuevo usuario (Ingresos y Gastos)
