@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ArrowLeft, Plus, Trash2, TrendingDown, TrendingUp } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, TrendingDown, TrendingUp, DollarSign, Tag } from 'lucide-react'
 import Link from 'next/link'
 
 interface Category {
@@ -31,6 +31,7 @@ interface Transaction {
   description: string
   date: string
   category_id: string
+  currency: string
 }
 
 interface TransactionsClientProps {
@@ -57,6 +58,7 @@ export default function TransactionsClient({
     description: '',
     date: new Date().toISOString().split('T')[0],
     categoryId: '',
+    currency: 'ARS',
   })
 
   const handleAddTransaction = async (e: React.FormEvent) => {
@@ -78,6 +80,7 @@ export default function TransactionsClient({
           description: formData.description,
           date: formData.date,
           category_id: formData.categoryId || null,
+          currency: formData.currency,
         })
         .select()
 
@@ -90,6 +93,7 @@ export default function TransactionsClient({
         description: '',
         date: new Date().toISOString().split('T')[0],
         categoryId: '',
+        currency: 'ARS',
       })
       setIsAddingNew(false)
     } catch (error) {
@@ -120,29 +124,40 @@ export default function TransactionsClient({
   }
 
   const getCategoryName = (categoryId: string | null) => {
-    if (!categoryId) return 'Sin categoría'
+    if (!categoryId) return null
     const category = categories.find(c => c.id === categoryId)
-    return category?.name || 'Categoría desconocida'
+    return category || null
   }
+
+  const formatAmount = (amount: number, currency: string) => {
+    return currency === 'USD'
+      ? `US$${amount.toFixed(2)}`
+      : `$${amount.toFixed(2)}`
+  }
+
+  const selectedCategoryName = formData.categoryId
+    ? categories.find(c => c.id === formData.categoryId)?.name
+    : undefined
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-wrap justify-between items-center gap-3 py-4 sm:h-16 sm:py-0">
+            <div className="flex items-center gap-3">
               <Link href="/dashboard">
                 <Button variant="ghost" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  <ArrowLeft className="w-4 h-4 mr-1.5" />
                   Volver
                 </Button>
               </Link>
-              <h1 className="text-2xl font-bold text-foreground">Mis Transacciones</h1>
+              <h1 className="text-xl font-bold text-foreground">Mis Transacciones</h1>
             </div>
             <Button 
               onClick={() => setIsAddingNew(!isAddingNew)}
-              className="gap-2"
+              className="gap-2 shadow-sm"
+              size="sm"
             >
               <Plus className="w-4 h-4" />
               {isAddingNew ? 'Cancelar' : 'Nueva transacción'}
@@ -154,16 +169,18 @@ export default function TransactionsClient({
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isAddingNew && (
-          <Card className="border-2 mb-8 bg-gradient-to-br from-primary/5 to-secondary/5">
-            <CardHeader>
-              <CardTitle>Agregar Nueva Transacción</CardTitle>
+          <Card className="border-0 shadow-lg mb-8">
+            <div className="h-1 w-full bg-gradient-to-r from-primary to-secondary rounded-t-lg" />
+            <CardHeader className="pt-5">
+              <CardTitle className="text-lg font-bold">Agregar Nueva Transacción</CardTitle>
               <CardDescription>
-                Registra un ingreso o gasto
+                Registrá un ingreso o gasto
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleAddTransaction} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Tipo */}
                   <div className="grid gap-2">
                     <Label htmlFor="type">Tipo</Label>
                     <Select 
@@ -174,7 +191,7 @@ export default function TransactionsClient({
                         }
                       }}
                     >
-                      <SelectTrigger id="type">
+                      <SelectTrigger id="type" className="w-full h-10">
                         <SelectValue>
                           {formData.type === 'income' ? 'Ingreso' : 'Gasto'}
                         </SelectValue>
@@ -186,19 +203,44 @@ export default function TransactionsClient({
                     </Select>
                   </div>
 
+                  {/* Moneda */}
                   <div className="grid gap-2">
-                    <Label htmlFor="amount">Monto</Label>
+                    <Label htmlFor="currency">Moneda</Label>
+                    <Select 
+                      value={formData.currency} 
+                      onValueChange={(value) => value && setFormData({...formData, currency: value})}
+                    >
+                      <SelectTrigger id="currency" className="w-full h-10">
+                        <SelectValue>
+                          {formData.currency === 'USD' ? 'Dólares (US$)' : 'Pesos ($)'}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ARS">Pesos ($)</SelectItem>
+                        <SelectItem value="USD">Dólares (US$)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Monto */}
+                  <div className="grid gap-2">
+                    <Label htmlFor="amount">
+                      Monto {formData.currency === 'USD' ? '(US$)' : '($)'}
+                    </Label>
                     <Input
                       id="amount"
                       type="number"
                       step="0.01"
+                      min="0"
                       placeholder="0.00"
                       value={formData.amount}
                       onChange={(e) => setFormData({...formData, amount: e.target.value})}
                       required
+                      className="h-10"
                     />
                   </div>
 
+                  {/* Fecha */}
                   <div className="grid gap-2">
                     <Label htmlFor="date">Fecha</Label>
                     <Input
@@ -207,22 +249,32 @@ export default function TransactionsClient({
                       value={formData.date}
                       onChange={(e) => setFormData({...formData, date: e.target.value})}
                       required
+                      className="h-10"
                     />
                   </div>
 
-                  <div className="grid gap-2">
-                    <Label htmlFor="category">Categoría</Label>
+                  {/* Categoría */}
+                  <div className="grid gap-2 sm:col-span-2">
+                    <Label htmlFor="category">Categoría (opcional)</Label>
                     <Select 
                       value={formData.categoryId} 
                       onValueChange={(value) => value && setFormData({...formData, categoryId: value})}
                     >
-                      <SelectTrigger id="category">
-                        <SelectValue placeholder="Selecciona una categoría" />
+                      <SelectTrigger id="category" className="w-full h-10">
+                        <SelectValue placeholder="Selecciona una categoría">
+                          {selectedCategoryName}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {categories.map(cat => (
                           <SelectItem key={cat.id} value={cat.id}>
-                            {cat.name}
+                            <span className="flex items-center gap-2">
+                              <span
+                                className="w-3 h-3 rounded-full inline-block shrink-0"
+                                style={{ backgroundColor: cat.color }}
+                              />
+                              {cat.name}
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -230,18 +282,20 @@ export default function TransactionsClient({
                   </div>
                 </div>
 
+                {/* Descripción */}
                 <div className="grid gap-2">
                   <Label htmlFor="description">Descripción</Label>
                   <Input
                     id="description"
-                    placeholder="Ej: Salario mensual, Compra de groceries..."
+                    placeholder="Ej: Salario mensual, Compra de supermercado..."
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
                     required
+                    className="h-10"
                   />
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isLoading} size="lg">
+                <Button type="submit" className="w-full shadow-sm" disabled={isLoading} size="lg">
                   {isLoading ? 'Guardando...' : 'Guardar Transacción'}
                 </Button>
               </form>
@@ -250,62 +304,100 @@ export default function TransactionsClient({
         )}
 
         {/* Transactions List */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {transactions.length === 0 ? (
-            <Card className="border-2">
-              <CardContent className="pt-12 pb-12 text-center">
-                <p className="text-muted-foreground mb-4">No hay transacciones registradas</p>
-                <Button onClick={() => setIsAddingNew(true)}>
+            <Card className="border-0 shadow-md">
+              <CardContent className="pt-16 pb-16 text-center">
+                <div className="w-16 h-16 rounded-full bg-muted/60 flex items-center justify-center mx-auto mb-4">
+                  <Wallet className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground mb-2 font-medium">No hay transacciones registradas</p>
+                <p className="text-sm text-muted-foreground mb-6">Empezá registrando tu primer ingreso o gasto</p>
+                <Button onClick={() => setIsAddingNew(true)} className="shadow-sm">
                   Agregar tu primera transacción
                 </Button>
               </CardContent>
             </Card>
           ) : (
-            transactions.map(transaction => (
-              <Card key={transaction.id} className="border hover:shadow-lg transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                        transaction.type === 'income' 
-                          ? 'bg-green-100 dark:bg-green-900/30' 
-                          : 'bg-red-100 dark:bg-red-900/30'
-                      }`}>
-                        {transaction.type === 'income' ? (
-                          <TrendingUp className={`w-6 h-6 ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`} />
-                        ) : (
-                          <TrendingDown className="w-6 h-6 text-red-600" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground">{transaction.description}</p>
-                        <p className="text-sm text-muted-foreground">{getCategoryName(transaction.category_id)}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className={`font-bold text-lg ${
-                          transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+            transactions.map(transaction => {
+              const cat = getCategoryName(transaction.category_id)
+              const isUSD = transaction.currency === 'USD'
+              return (
+                <Card key={transaction.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
+                  <CardContent className="py-4 px-5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                          transaction.type === 'income' 
+                            ? 'bg-emerald-100 dark:bg-emerald-900/30' 
+                            : 'bg-rose-100 dark:bg-rose-900/30'
                         }`}>
-                          {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{transaction.date}</p>
+                          {transaction.type === 'income' ? (
+                            <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                          ) : (
+                            <TrendingDown className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-foreground truncate">{transaction.description}</p>
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                            {cat ? (
+                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <span
+                                  className="w-2 h-2 rounded-full inline-block"
+                                  style={{ backgroundColor: cat.color }}
+                                />
+                                {cat.name}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">Sin categoría</span>
+                            )}
+                            <span className="text-xs text-muted-foreground">·</span>
+                            <span className="text-xs text-muted-foreground">{transaction.date}</span>
+                          </div>
+                        </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteTransaction(transaction.id)}
-                      >
-                        <Trash2 className="w-4 h-4 text-red-600" />
-                      </Button>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="text-right">
+                          <p className={`font-bold text-base ${
+                            transaction.type === 'income' 
+                              ? 'text-emerald-600 dark:text-emerald-400' 
+                              : 'text-rose-600 dark:text-rose-400'
+                          }`}>
+                            {transaction.type === 'income' ? '+' : '-'}{formatAmount(transaction.amount, transaction.currency || 'ARS')}
+                          </p>
+                          {isUSD && (
+                            <span className="text-xs font-medium text-blue-500 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-full">
+                              USD
+                            </span>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteTransaction(transaction.id)}
+                          className="text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                  </CardContent>
+                </Card>
+              )
+            })
           )}
         </div>
       </main>
     </div>
+  )
+}
+
+// Fix missing Wallet import
+function Wallet({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" /><path d="M3 5v14a2 2 0 0 0 2 2h16v-5" /><path d="M18 12a2 2 0 0 0 0 4h4v-4Z" />
+    </svg>
   )
 }

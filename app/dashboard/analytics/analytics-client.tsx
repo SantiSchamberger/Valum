@@ -1,9 +1,9 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, TrendingUp, TrendingDown, DollarSign } from 'lucide-react'
+import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, BarChart3 } from 'lucide-react'
 import Link from 'next/link'
 import {
   PieChart,
@@ -28,6 +28,7 @@ interface Transaction {
   description: string
   date: string
   category_id: string | null
+  currency: string
   categories: any
 }
 
@@ -48,20 +49,27 @@ export default function AnalyticsClient({
   transactions,
   categories,
 }: AnalyticsClientProps) {
-  // Calculate analytics
+  const [selectedCurrency, setSelectedCurrency] = useState<'ARS' | 'USD'>('ARS')
+
+  const hasUSD = useMemo(() => transactions.some(t => t.currency === 'USD'), [transactions])
+
+  const filteredTransactions = useMemo(
+    () => transactions.filter(t => !t.currency || t.currency === selectedCurrency),
+    [transactions, selectedCurrency]
+  )
+
   const analytics = useMemo(() => {
-    const totalIncome = transactions
+    const totalIncome = filteredTransactions
       .filter(t => t.type === 'income')
       .reduce((sum, t) => sum + t.amount, 0)
 
-    const totalExpense = transactions
+    const totalExpense = filteredTransactions
       .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + t.amount, 0)
 
     const balance = totalIncome - totalExpense
 
-    // Group expenses by category
-    const expensesByCategory = transactions
+    const expensesByCategory = filteredTransactions
       .filter(t => t.type === 'expense')
       .reduce((acc: any, t) => {
         const categoryName = t.categories?.name || 'Sin categoría'
@@ -78,18 +86,14 @@ export default function AnalyticsClient({
         return acc
       }, [])
 
-    // Group transactions by month
-    const transactionsByMonth = transactions.reduce((acc: any, t) => {
+    const transactionsByMonth = filteredTransactions.reduce((acc: any, t) => {
       const date = new Date(t.date)
       const monthKey = date.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' })
       const existing = acc.find((item: any) => item.month === monthKey)
 
       if (existing) {
-        if (t.type === 'income') {
-          existing.income += t.amount
-        } else {
-          existing.expense += t.amount
-        }
+        if (t.type === 'income') existing.income += t.amount
+        else existing.expense += t.amount
       } else {
         acc.push({
           month: monthKey,
@@ -104,10 +108,9 @@ export default function AnalyticsClient({
         const dateB = new Date('01 ' + b.month)
         return dateA.getTime() - dateB.getTime()
       })
-      .slice(-12) // Last 12 months
+      .slice(-12)
 
-    // Daily trend (last 30 days)
-    const dailyTrend = transactions
+    const dailyTrend = filteredTransactions
       .filter(t => {
         const date = new Date(t.date)
         const now = new Date()
@@ -120,11 +123,8 @@ export default function AnalyticsClient({
         const existing = acc.find((item: any) => item.date === dayKey)
 
         if (existing) {
-          if (t.type === 'income') {
-            existing.income += t.amount
-          } else {
-            existing.expense += t.amount
-          }
+          if (t.type === 'income') existing.income += t.amount
+          else existing.expense += t.amount
         } else {
           acc.push({
             date: dayKey,
@@ -136,213 +136,234 @@ export default function AnalyticsClient({
       }, [])
       .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
-    return {
-      totalIncome,
-      totalExpense,
-      balance,
-      expensesByCategory,
-      transactionsByMonth,
-      dailyTrend,
-    }
-  }, [transactions])
+    return { totalIncome, totalExpense, balance, expensesByCategory, transactionsByMonth, dailyTrend }
+  }, [filteredTransactions])
 
-  const COLORS = [
-    '#3B82F6',
-    '#10B981',
-    '#F59E0B',
-    '#EF4444',
-    '#8B5CF6',
-    '#EC4899',
-    '#06B6D4',
-    '#14B8A6',
-  ]
+  const currSymbol = selectedCurrency === 'USD' ? 'US$' : '$'
+  const fmt = (v: number) => `${currSymbol}${v.toFixed(2)}`
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4 h-16">
-            <Link href="/dashboard">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Volver
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold text-foreground">Análisis Financiero</h1>
+          <div className="flex flex-wrap justify-between items-center gap-3 py-4 sm:h-16 sm:py-0">
+            <div className="flex items-center gap-3">
+              <Link href="/dashboard">
+                <Button variant="ghost" size="sm">
+                  <ArrowLeft className="w-4 h-4 mr-1.5" />
+                  Volver
+                </Button>
+              </Link>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-sm">
+                  <BarChart3 className="w-4 h-4 text-white" />
+                </div>
+                <h1 className="text-xl font-bold text-foreground">Análisis Financiero</h1>
+              </div>
+            </div>
+            {hasUSD && (
+              <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+                <button
+                  onClick={() => setSelectedCurrency('ARS')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                    selectedCurrency === 'ARS'
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Pesos ($)
+                </button>
+                <button
+                  onClick={() => setSelectedCurrency('USD')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                    selectedCurrency === 'USD'
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Dólares (US$)
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Total Income */}
-          <Card className="border-2">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Ingresos Totales</p>
-                  <p className="text-3xl font-bold text-green-600">
-                    ${analytics.totalIncome.toFixed(2)}
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-green-600" />
-                </div>
+
+        {transactions.length === 0 ? (
+          <Card className="border-0 shadow-md">
+            <CardContent className="pt-16 pb-16 text-center">
+              <div className="w-16 h-16 rounded-full bg-muted/60 flex items-center justify-center mx-auto mb-4">
+                <BarChart3 className="w-8 h-8 text-muted-foreground" />
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Total Expense */}
-          <Card className="border-2">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Gastos Totales</p>
-                  <p className="text-3xl font-bold text-red-600">
-                    ${analytics.totalExpense.toFixed(2)}
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                  <TrendingDown className="w-6 h-6 text-red-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Balance */}
-          <Card className="border-2">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Balance</p>
-                  <p className={`text-3xl font-bold ${
-                    analytics.balance >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    ${analytics.balance.toFixed(2)}
-                  </p>
-                </div>
-                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                  analytics.balance >= 0
-                    ? 'bg-green-100 dark:bg-green-900/30'
-                    : 'bg-red-100 dark:bg-red-900/30'
-                }`}>
-                  <DollarSign className={`w-6 h-6 ${
-                    analytics.balance >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Gastos por Categoría */}
-          {analytics.expensesByCategory.length > 0 && (
-            <Card className="border-2">
-              <CardHeader>
-                <CardTitle>Gastos por Categoría</CardTitle>
-                <CardDescription>Distribución de tus gastos</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={analytics.expensesByCategory}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, value }) => `${name}: $${value.toFixed(0)}`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {analytics.expensesByCategory.map((entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => `$${(value as number).toFixed(2)}`} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Tendencia Mensual */}
-          {analytics.transactionsByMonth.length > 0 && (
-            <Card className="border-2">
-              <CardHeader>
-                <CardTitle>Tendencia Mensual</CardTitle>
-                <CardDescription>Ingresos vs Gastos</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={analytics.transactionsByMonth}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => `$${(value as number).toFixed(2)}`} />
-                    <Legend />
-                    <Bar dataKey="income" fill="#10B981" name="Ingresos" />
-                    <Bar dataKey="expense" fill="#EF4444" name="Gastos" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Daily Trend */}
-        {analytics.dailyTrend.length > 0 && (
-          <Card className="border-2">
-            <CardHeader>
-              <CardTitle>Tendencia Diaria (Últimos 30 días)</CardTitle>
-              <CardDescription>Movimientos diarios de tu cuenta</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={analytics.dailyTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `$${(value as number).toFixed(2)}`} />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="income"
-                    stroke="#10B981"
-                    name="Ingresos"
-                    strokeWidth={2}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="expense"
-                    stroke="#EF4444"
-                    name="Gastos"
-                    strokeWidth={2}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Empty State */}
-        {transactions.length === 0 && (
-          <Card className="border-2">
-            <CardContent className="pt-12 pb-12 text-center">
-              <p className="text-muted-foreground mb-4">No hay transacciones para analizar</p>
+              <p className="font-medium text-foreground mb-2">No hay transacciones para analizar</p>
               <p className="text-sm text-muted-foreground mb-6">
-                Agrega transacciones para ver gráficos y análisis
+                Agregá transacciones para ver gráficos y análisis detallados
               </p>
               <Link href="/dashboard/transactions">
-                <Button>Ver Transacciones</Button>
+                <Button className="shadow-sm">Ver Transacciones</Button>
               </Link>
             </CardContent>
           </Card>
+        ) : (
+          <>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+              <Card className="border-0 shadow-md overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-emerald-400 to-green-500" />
+                <CardContent className="pt-5 pb-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1 font-medium">Ingresos Totales</p>
+                      <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                        {fmt(analytics.totalIncome)}
+                      </p>
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shadow-sm">
+                      <TrendingUp className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-md overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-rose-400 to-red-500" />
+                <CardContent className="pt-5 pb-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1 font-medium">Gastos Totales</p>
+                      <p className="text-3xl font-bold text-rose-600 dark:text-rose-400">
+                        {fmt(analytics.totalExpense)}
+                      </p>
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center shadow-sm">
+                      <TrendingDown className="w-6 h-6 text-rose-600 dark:text-rose-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-md overflow-hidden">
+                <div className={`h-1 ${analytics.balance >= 0 ? 'bg-gradient-to-r from-blue-400 to-indigo-500' : 'bg-gradient-to-r from-orange-400 to-red-500'}`} />
+                <CardContent className="pt-5 pb-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-1 font-medium">Balance</p>
+                      <p className={`text-3xl font-bold ${analytics.balance >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                        {fmt(analytics.balance)}
+                      </p>
+                    </div>
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${
+                      analytics.balance >= 0
+                        ? 'bg-blue-100 dark:bg-blue-900/30'
+                        : 'bg-orange-100 dark:bg-orange-900/30'
+                    }`}>
+                      <DollarSign className={`w-6 h-6 ${analytics.balance >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'}`} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              {analytics.expensesByCategory.length > 0 && (
+                <Card className="border-0 shadow-md">
+                  <div className="h-1 bg-gradient-to-r from-violet-400 to-purple-500 rounded-t-lg" />
+                  <CardHeader className="pt-5">
+                    <CardTitle className="text-base font-bold">Gastos por Categoría</CardTitle>
+                    <CardDescription>Distribución de tus gastos {selectedCurrency === 'USD' ? 'en dólares' : 'en pesos'}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <PieChart>
+                        <Pie
+                          data={analytics.expensesByCategory}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, value }) => `${name}: ${currSymbol}${value.toFixed(0)}`}
+                          outerRadius={90}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {analytics.expensesByCategory.map((entry: any, index: number) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => fmt(value as number)} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              )}
+
+              {analytics.transactionsByMonth.length > 0 && (
+                <Card className="border-0 shadow-md">
+                  <div className="h-1 bg-gradient-to-r from-blue-400 to-cyan-500 rounded-t-lg" />
+                  <CardHeader className="pt-5">
+                    <CardTitle className="text-base font-bold">Tendencia Mensual</CardTitle>
+                    <CardDescription>Ingresos vs Gastos por mes</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <BarChart data={analytics.transactionsByMonth}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-10" />
+                        <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                        <YAxis tick={{ fontSize: 12 }} />
+                        <Tooltip formatter={(value) => fmt(value as number)} />
+                        <Legend />
+                        <Bar dataKey="income" fill="#10B981" name="Ingresos" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="expense" fill="#EF4444" name="Gastos" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {analytics.dailyTrend.length > 0 && (
+              <Card className="border-0 shadow-md">
+                <div className="h-1 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-t-lg" />
+                <CardHeader className="pt-5">
+                  <CardTitle className="text-base font-bold">Tendencia Diaria — Últimos 30 días</CardTitle>
+                  <CardDescription>Movimientos diarios de tu cuenta</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={360}>
+                    <LineChart data={analytics.dailyTrend}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-10" />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip formatter={(value) => fmt(value as number)} />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="income"
+                        stroke="#10B981"
+                        name="Ingresos"
+                        strokeWidth={2.5}
+                        dot={{ r: 3 }}
+                        activeDot={{ r: 5 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="expense"
+                        stroke="#EF4444"
+                        name="Gastos"
+                        strokeWidth={2.5}
+                        dot={{ r: 3 }}
+                        activeDot={{ r: 5 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )}
+          </>
         )}
       </main>
     </div>

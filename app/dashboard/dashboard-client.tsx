@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { LogOut, Plus, TrendingUp, TrendingDown, Wallet, BarChart3 } from 'lucide-react'
+import { LogOut, Plus, TrendingUp, TrendingDown, Wallet, BarChart3, Users, DollarSign } from 'lucide-react'
 import Link from 'next/link'
 
 interface DashboardClientProps {
@@ -18,9 +18,13 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
   const supabase = createClient()
   const [isLoading, setIsLoading] = useState(false)
   const [stats, setStats] = useState({
-    totalIncome: 0,
-    totalExpense: 0,
-    balance: 0,
+    totalIncomeARS: 0,
+    totalExpenseARS: 0,
+    balanceARS: 0,
+    totalIncomeUSD: 0,
+    totalExpenseUSD: 0,
+    balanceUSD: 0,
+    hasUSD: false,
   })
 
   useEffect(() => {
@@ -29,7 +33,6 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
 
   const fetchStats = async () => {
     try {
-      // Get transactions for this month
       const today = new Date()
       const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
       
@@ -40,18 +43,28 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
         .gte('date', firstDay.toISOString().split('T')[0])
 
       if (transactions) {
-        const income = transactions
-          .filter(t => t.type === 'income')
+        const incomeARS = transactions
+          .filter(t => t.type === 'income' && (!t.currency || t.currency === 'ARS'))
           .reduce((sum, t) => sum + parseFloat(t.amount), 0)
-        
-        const expense = transactions
-          .filter(t => t.type === 'expense')
+        const expenseARS = transactions
+          .filter(t => t.type === 'expense' && (!t.currency || t.currency === 'ARS'))
           .reduce((sum, t) => sum + parseFloat(t.amount), 0)
+        const incomeUSD = transactions
+          .filter(t => t.type === 'income' && t.currency === 'USD')
+          .reduce((sum, t) => sum + parseFloat(t.amount), 0)
+        const expenseUSD = transactions
+          .filter(t => t.type === 'expense' && t.currency === 'USD')
+          .reduce((sum, t) => sum + parseFloat(t.amount), 0)
+        const hasUSD = transactions.some(t => t.currency === 'USD')
 
         setStats({
-          totalIncome: income,
-          totalExpense: expense,
-          balance: income - expense,
+          totalIncomeARS: incomeARS,
+          totalExpenseARS: expenseARS,
+          balanceARS: incomeARS - expenseARS,
+          totalIncomeUSD: incomeUSD,
+          totalExpenseUSD: expenseUSD,
+          balanceUSD: incomeUSD - expenseUSD,
+          hasUSD,
         })
       }
     } catch (error) {
@@ -65,14 +78,20 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
     router.push('/auth/login')
   }
 
+  const formatAmount = (amount: number, currency: 'ARS' | 'USD' = 'ARS') => {
+    return currency === 'USD'
+      ? `US$${amount.toFixed(2)}`
+      : `$${amount.toFixed(2)}`
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md">
                 <Wallet className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -109,58 +128,82 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
             Bienvenido, {profile.full_name?.split(' ')[0] || 'Usuario'}
           </h2>
           <p className="text-muted-foreground">
-            Aquí puedes gestionar tus finanzas de forma simple e intuitiva
+            Aquí podés gestionar tus finanzas de forma simple e intuitiva
           </p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Income Card */}
-          <Card className="border-2 hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-green-600" />
+          <Card className="border-0 shadow-md overflow-hidden">
+            <div className="h-1 w-full bg-gradient-to-r from-emerald-400 to-green-500" />
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
                 Ingresos este mes
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-green-600">
-                ${stats.totalIncome.toFixed(2)}
+            <CardContent className="pb-4">
+              <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                {formatAmount(stats.totalIncomeARS)}
               </p>
-              <p className="text-xs text-muted-foreground mt-2">+12% respecto al mes anterior</p>
+              {stats.hasUSD && stats.totalIncomeUSD > 0 && (
+                <p className="text-sm font-semibold text-emerald-500 mt-0.5">
+                  + {formatAmount(stats.totalIncomeUSD, 'USD')}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground mt-2">Mes actual en pesos</p>
             </CardContent>
           </Card>
 
           {/* Expense Card */}
-          <Card className="border-2 hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
-                <TrendingDown className="w-4 h-4 text-red-600" />
+          <Card className="border-0 shadow-md overflow-hidden">
+            <div className="h-1 w-full bg-gradient-to-r from-rose-400 to-red-500" />
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center">
+                  <TrendingDown className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                </div>
                 Gastos este mes
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-red-600">
-                ${stats.totalExpense.toFixed(2)}
+            <CardContent className="pb-4">
+              <p className="text-3xl font-bold text-rose-600 dark:text-rose-400">
+                {formatAmount(stats.totalExpenseARS)}
               </p>
-              <p className="text-xs text-muted-foreground mt-2">+5% respecto al mes anterior</p>
+              {stats.hasUSD && stats.totalExpenseUSD > 0 && (
+                <p className="text-sm font-semibold text-rose-500 mt-0.5">
+                  + {formatAmount(stats.totalExpenseUSD, 'USD')}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground mt-2">Mes actual en pesos</p>
             </CardContent>
           </Card>
 
           {/* Balance Card */}
-          <Card className="border-2 hover:shadow-lg transition-shadow bg-gradient-to-br from-primary/5 to-secondary/5">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
-                <Wallet className="w-4 h-4 text-primary" />
+          <Card className="border-0 shadow-md overflow-hidden">
+            <div className={`h-1 w-full bg-gradient-to-r ${stats.balanceARS >= 0 ? 'from-blue-400 to-indigo-500' : 'from-orange-400 to-red-500'}`} />
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+                  <Wallet className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                </div>
                 Balance
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className={`text-3xl font-bold ${stats.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                ${stats.balance.toFixed(2)}
+            <CardContent className="pb-4">
+              <p className={`text-3xl font-bold ${stats.balanceARS >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                {formatAmount(stats.balanceARS)}
               </p>
+              {stats.hasUSD && (
+                <p className={`text-sm font-semibold mt-0.5 ${stats.balanceUSD >= 0 ? 'text-blue-500' : 'text-orange-500'}`}>
+                  {formatAmount(stats.balanceUSD, 'USD')}
+                </p>
+              )}
               <p className="text-xs text-muted-foreground mt-2">
-                {stats.balance >= 0 ? 'Presupuesto positivo' : 'Presupuesto negativo'}
+                {stats.balanceARS >= 0 ? 'Presupuesto positivo' : 'Presupuesto negativo'}
               </p>
             </CardContent>
           </Card>
@@ -169,47 +212,56 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Quick Actions Card */}
-          <Card className="border-2">
+          <Card className="border-0 shadow-md">
             <CardHeader>
-              <CardTitle>Acciones Rápidas</CardTitle>
-              <CardDescription>Gestiona tus transacciones y datos</CardDescription>
+              <CardTitle className="text-lg font-bold">Acciones Rápidas</CardTitle>
+              <CardDescription>Gestioná tus transacciones y datos</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3">
                 <Link href="/dashboard/transactions">
-                  <Button className="w-full" size="lg">
+                  <Button className="w-full shadow-sm hover:shadow-md" size="lg">
                     <Plus className="w-4 h-4 mr-2" />
                     Agregar Transacción
                   </Button>
                 </Link>
                 <Link href="/dashboard/categories">
-                  <Button variant="outline" className="w-full" size="lg">
+                  <Button variant="outline" className="w-full hover:shadow-sm" size="lg">
                     Gestionar Categorías
                   </Button>
                 </Link>
                 <Link href="/dashboard/analytics">
-                  <Button variant="outline" className="w-full" size="lg">
+                  <Button variant="outline" className="w-full hover:shadow-sm" size="lg">
                     <BarChart3 className="w-4 h-4 mr-2" />
                     Ver Análisis
                   </Button>
                 </Link>
                 {profile.role === 'client' && (
                   <Link href="/dashboard/advisors">
-                    <Button variant="outline" className="w-full" size="lg">
+                    <Button variant="outline" className="w-full hover:shadow-sm" size="lg">
+                      <Users className="w-4 h-4 mr-2" />
                       Mi Asesor Financiero
+                    </Button>
+                  </Link>
+                )}
+                {(profile.role === 'advisor' || profile.role === 'admin') && (
+                  <Link href="/dashboard/advisors">
+                    <Button variant="outline" className="w-full border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/30 hover:shadow-sm" size="lg">
+                      <Users className="w-4 h-4 mr-2" />
+                      Asesores Financieros
                     </Button>
                   </Link>
                 )}
                 {profile.role === 'advisor' && (
                   <Link href="/dashboard/clients">
-                    <Button variant="outline" className="w-full" size="lg">
+                    <Button variant="outline" className="w-full hover:shadow-sm" size="lg">
                       Mis Clientes
                     </Button>
                   </Link>
                 )}
                 {profile.role === 'admin' && (
                   <Link href="/dashboard/admin">
-                    <Button variant="outline" className="w-full border-purple-500 text-purple-600 hover:bg-purple-50 hover:text-purple-700" size="lg">
+                    <Button variant="outline" className="w-full border-purple-300 text-purple-700 hover:bg-purple-50 hover:text-purple-800 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-900/30 hover:shadow-sm" size="lg">
                       Panel de Administración
                     </Button>
                   </Link>
@@ -218,30 +270,30 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
             </CardContent>
           </Card>
 
-          {/* Recent Activity Card */}
-          <Card className="border-2">
+          {/* Info Card */}
+          <Card className="border-0 shadow-md">
             <CardHeader>
-              <CardTitle>Información</CardTitle>
+              <CardTitle className="text-lg font-bold">Información</CardTitle>
               <CardDescription>Tu cuenta y configuración</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Correo electrónico</p>
+                <div className="bg-muted/50 rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground mb-0.5">Correo electrónico</p>
                   <p className="font-medium text-foreground">{user.email}</p>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Nombre</p>
+                <div className="bg-muted/50 rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground mb-0.5">Nombre</p>
                   <p className="font-medium text-foreground">{profile.full_name || 'No configurado'}</p>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Tipo de cuenta</p>
+                <div className="bg-muted/50 rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground mb-0.5">Tipo de cuenta</p>
                   <p className="font-medium text-foreground capitalize">
                     {profile.role === 'advisor' ? 'Asesor Financiero' : profile.role === 'admin' ? 'Administrador' : 'Cliente'}
                   </p>
                 </div>
                 <Link href="/dashboard/settings">
-                  <Button variant="outline" className="w-full mt-4">
+                  <Button variant="outline" className="w-full mt-2 hover:shadow-sm">
                     Editar Perfil
                   </Button>
                 </Link>

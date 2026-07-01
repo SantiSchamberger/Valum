@@ -50,7 +50,7 @@
 
 :root {
   color-scheme: light;
-  --background: #f8fafb;
+  --background: #eef2f7;
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
@@ -165,5 +165,13 @@
   }
   html {
     @apply font-sans;
+  }
+  button, [role="button"], a {
+    cursor: pointer;
+  }
+  * {
+    transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
   }
 }
