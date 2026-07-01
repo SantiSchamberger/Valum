@@ -23,9 +23,6 @@ export default async function HomePage() {
             <div className="relative w-10 h-10 flex items-center justify-center">
               <img src="/logo.png" alt="Logo de Valum" className="w-full h-full object-contain" />
             </div>
-            <div>
-              <h1 className="font-bold text-xl text-foreground">Valum</h1>
-            </div>
             <div className="flex items-center gap-2">
               <Link href="/auth/login" className="cursor-pointer">
                 <Button variant="ghost" size="sm" className="cursor-pointer hover:bg-muted">
