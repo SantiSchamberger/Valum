@@ -27,7 +27,7 @@ export default async function HomePage() {
               <img
                 src="/logo.png"
                 alt="Logo de Valum"
-                className="h-10 w-auto object-contain"
+                className="h-16 w-auto object-contain"
               />
             </div>
 
