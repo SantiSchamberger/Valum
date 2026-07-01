@@ -22,6 +22,8 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [isRefreshingRate, setIsRefreshingRate] = useState(false)
   const [currentTipIndex, setCurrentTipIndex] = useState(0)
+  const [tipHistory, setTipHistory] = useState<number[]>([])
+  const [notifications, setNotifications] = useState<Array<{ id: string; title: string; message: string; created_at: string; admin_email: string }>>([])
   const [stats, setStats] = useState({
     totalIncomeARS: 0,
     totalExpenseARS: 0,
@@ -41,6 +43,33 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
     'Paga primero las deudas con mayores tasas de interés.',
     'Revisa tus metas financieras cada trimestre y ajusta tu plan.',
   ]
+
+  const getNextTipIndex = (seen: number[]) => {
+    const available = financialTips
+      .map((_, index) => index)
+      .filter(index => !seen.includes(index))
+
+    if (available.length === 0) {
+      return Math.floor(Math.random() * financialTips.length)
+    }
+
+    return available[Math.floor(Math.random() * available.length)]
+  }
+
+  const persistTipHistory = (history: number[]) => {
+    if (typeof window === 'undefined') return
+    localStorage.setItem('valumTipHistory', JSON.stringify(history))
+  }
+
+  const loadTipHistory = () => {
+    if (typeof window === 'undefined') return [] as number[]
+    try {
+      const stored = JSON.parse(localStorage.getItem('valumTipHistory') || '[]') as number[]
+      return Array.isArray(stored) ? stored.filter(i => typeof i === 'number' && i >= 0 && i < financialTips.length) : []
+    } catch {
+      return []
+    }
+  }
 
   // Obtener tipo de cambio
   const fetchExchangeRate = async () => {
@@ -76,6 +105,7 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
   useEffect(() => {
     fetchStats()
     fetchExchangeRate()
+    fetchNotifications()
 
     // Actualizar tipo de cambio cada 5 minutos
     const interval = setInterval(() => {
@@ -86,8 +116,27 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
   }, [])
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const storedHistory = loadTipHistory()
+    const initialIndex = getNextTipIndex(storedHistory)
+    const initialHistory = storedHistory.includes(initialIndex)
+      ? storedHistory
+      : [...storedHistory, initialIndex]
+
+    setCurrentTipIndex(initialIndex)
+    setTipHistory(initialHistory)
+    persistTipHistory(initialHistory)
+
     const tipInterval = setInterval(() => {
-      setCurrentTipIndex((index) => (index + 1) % financialTips.length)
+      setCurrentTipIndex((currentIndex) => {
+        const currentHistory = loadTipHistory()
+        const nextIndex = getNextTipIndex(currentHistory)
+        const nextHistory = currentHistory.includes(nextIndex) ? currentHistory : [...currentHistory, nextIndex]
+        persistTipHistory(nextHistory.length >= financialTips.length ? [nextIndex] : nextHistory)
+        setTipHistory(nextHistory.length >= financialTips.length ? [nextIndex] : nextHistory)
+        return nextIndex
+      })
     }, 10000)
 
     return () => clearInterval(tipInterval)
@@ -131,6 +180,22 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
       }
     } catch (error) {
       console.error('Error fetching stats:', error)
+    }
+  }
+
+  const fetchNotifications = async () => {
+    try {
+      const { data } = await supabase
+        .from('notifications')
+        .select('id,title,message,created_at,admin_email')
+        .order('created_at', { ascending: false })
+        .limit(4)
+
+      if (data) {
+        setNotifications(data)
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error)
     }
   }
 
@@ -277,8 +342,8 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
           </Card>
         </div>
 
-        {/* Exchange Rate + Tips */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Exchange Rate + Tips + Notifications */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {exchangeRate !== null && (
             <Card className="border-0 shadow-md overflow-hidden">
               <div className="h-1 w-full bg-gradient-to-r from-blue-400 to-indigo-500" />
@@ -356,8 +421,37 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
             <CardContent className="pb-4">
               <p className="text-lg font-semibold text-foreground">{financialTips[currentTipIndex]}</p>
               <p className="text-xs text-muted-foreground mt-3">
-                Consejo actualizado cada 10 segundos para mantener tus finanzas frescas.
+                Consejo actualizado cada 10 segundos y sin repetir seguido.
               </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-md overflow-hidden">
+            <div className="h-1 w-full bg-gradient-to-r from-cyan-400 to-sky-500" />
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-cyan-100 dark:bg-cyan-900/40 flex items-center justify-center">
+                  <DollarSign className="w-4 h-4 text-cyan-600 dark:text-cyan-300" />
+                </div>
+                Mensajes de Administrador
+              </CardTitle>
+              <CardDescription>Últimos avisos enviados desde administración</CardDescription>
+            </CardHeader>
+            <CardContent className="pb-4 space-y-4">
+              {notifications.length > 0 ? (
+                notifications.map((note) => (
+                  <div key={note.id} className="rounded-xl border border-border bg-card/80 p-4">
+                    <p className="font-semibold text-foreground">{note.title}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{note.message}</p>
+                    <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{new Date(note.created_at).toLocaleDateString('es-AR')}</span>
+                      <span>Por {note.admin_email}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No hay mensajes recientes.</p>
+              )}
             </CardContent>
           </Card>
         </div>

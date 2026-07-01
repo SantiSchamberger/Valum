@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -61,6 +62,9 @@ export default function AdminClient({
   const [pendingRole, setPendingRole] = useState<string>('')
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([])
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const [notificationTitle, setNotificationTitle] = useState('')
+  const [notificationMessage, setNotificationMessage] = useState('')
+  const [isSendingNotification, setIsSendingNotification] = useState(false)
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message })
@@ -125,6 +129,31 @@ export default function AdminClient({
   const clientCount = profiles.filter(p => p.role === 'client').length
   const advisorCount = profiles.filter(p => p.role === 'advisor').length
   const adminCount = profiles.filter(p => p.role === 'admin').length
+
+  const handleSendNotification = async () => {
+    if (!notificationTitle.trim() || !notificationMessage.trim()) {
+      showNotification('error', 'Completá título y mensaje para enviar el aviso.')
+      return
+    }
+
+    setIsSendingNotification(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('notifications')
+        .insert([{ title: notificationTitle.trim(), message: notificationMessage.trim(), admin_email: currentUser.email }])
+
+      if (error) throw error
+
+      setNotificationTitle('')
+      setNotificationMessage('')
+      showNotification('success', 'Notificación enviada correctamente.')
+    } catch (err) {
+      showNotification('error', err instanceof Error ? err.message : 'Error al enviar la notificación')
+    } finally {
+      setIsSendingNotification(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -206,6 +235,46 @@ export default function AdminClient({
               </CardContent>
             </Card>
           </div>
+
+          <Card className="border-0 shadow-md">
+            <div className="h-1 w-full bg-gradient-to-r from-cyan-500 to-sky-500 rounded-t-lg" />
+            <CardHeader className="pt-5">
+              <CardTitle className="flex items-center gap-2 text-lg font-bold">
+                <Users className="w-5 h-5 text-cyan-600" />
+                Enviar Notificación
+              </CardTitle>
+              <CardDescription>Enviar un aviso rápido que se muestre en el dashboard de los clientes.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="notification-title" className="text-sm font-medium">Título</Label>
+                <Input
+                  id="notification-title"
+                  value={notificationTitle}
+                  onChange={(event) => setNotificationTitle(event.target.value)}
+                  placeholder="Ej. Nuevo anuncio importante"
+                />
+              </div>
+              <div>
+                <Label htmlFor="notification-message" className="text-sm font-medium">Mensaje</Label>
+                <textarea
+                  id="notification-message"
+                  value={notificationMessage}
+                  onChange={(event) => setNotificationMessage(event.target.value)}
+                  className="min-h-[120px] w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  placeholder="Escribí el texto que verán los clientes cuando abran su dashboard"
+                />
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleSendNotification}
+                  disabled={isSendingNotification}
+                >
+                  {isSendingNotification ? 'Enviando...' : 'Enviar notificación'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Users Management */}
           <Card className="border-0 shadow-md">
