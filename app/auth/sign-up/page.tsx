@@ -12,8 +12,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('')
@@ -22,8 +22,16 @@ export default function SignUpPage() {
   const [fullName, setFullName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [referrer, setReferrer] = useState<string | null>(null)
+  const [referrerName, setReferrerName] = useState<string | null>(null)
   const router = useRouter()
-  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    setReferrer(params.get('referrer'))
+    setReferrerName(params.get('referrer_name'))
+  }, [])
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -77,8 +85,8 @@ export default function SignUpPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            referrer: searchParams.get('referrer') || null,
-            referrer_name: searchParams.get('referrer_name') || null,
+            referrer: referrer || null,
+            referrer_name: referrerName || null,
           }),
         })
 
