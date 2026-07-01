@@ -14,7 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ArrowLeft, Plus, Trash2, TrendingDown, TrendingUp, DollarSign, Tag } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, TrendingDown, TrendingUp, DollarSign, Tag, Download, Wallet } from 'lucide-react'
+import { generateCSV, downloadCSV } from '@/lib/download-utils'
 import Link from 'next/link'
 
 interface Category {
@@ -50,6 +51,7 @@ export default function TransactionsClient({
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions)
   const [isAddingNew, setIsAddingNew] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null)
   
   // Form state
   const [formData, setFormData] = useState({
@@ -60,6 +62,38 @@ export default function TransactionsClient({
     categoryId: '',
     currency: 'ARS',
   })
+
+  // Obtener el tipo de cambio cuando se selecciona USD
+  const handleCurrencyChange = async (currency: string) => {
+    setFormData({...formData, currency})
+    
+    if (currency === 'USD') {
+      try {
+        const response = await fetch(`/api/get-exchange-rate?date=${formData.date}`)
+        const data = await response.json()
+        setExchangeRate(data.rate)
+      } catch (error) {
+        console.error('Error fetching exchange rate:', error)
+        setExchangeRate(null)
+      }
+    }
+  }
+
+  // Obtener tipo de cambio cuando cambia la fecha
+  const handleDateChange = async (date: string) => {
+    setFormData({...formData, date})
+    
+    if (formData.currency === 'USD') {
+      try {
+        const response = await fetch(`/api/get-exchange-rate?date=${date}`)
+        const data = await response.json()
+        setExchangeRate(data.rate)
+      } catch (error) {
+        console.error('Error fetching exchange rate:', error)
+        setExchangeRate(null)
+      }
+    }
+  }
 
   const handleAddTransaction = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -81,6 +115,7 @@ export default function TransactionsClient({
           date: formData.date,
           category_id: formData.categoryId || null,
           currency: formData.currency,
+          exchange_rate: formData.currency === 'USD' ? exchangeRate : null,
         })
         .select()
 
@@ -95,6 +130,7 @@ export default function TransactionsClient({
         categoryId: '',
         currency: 'ARS',
       })
+      setExchangeRate(null)
       setIsAddingNew(false)
     } catch (error) {
       console.error('Error adding transaction:', error)
@@ -135,6 +171,28 @@ export default function TransactionsClient({
       : `$${amount.toFixed(2)}`
   }
 
+  const handleDownloadCSV = () => {
+    // Calculate totals
+    let totalIncome = 0
+    let totalExpense = 0
+    
+    transactions.forEach(tx => {
+      if (tx.type === 'income') {
+        totalIncome += tx.amount
+      } else {
+        totalExpense += tx.amount
+      }
+    })
+
+    const csv = generateCSV(transactions, {
+      income: totalIncome,
+      expenses: totalExpense,
+      net: totalIncome - totalExpense
+    }, user.email || 'mis-transacciones')
+
+    downloadCSV(csv, `transacciones-${new Date().toISOString().split('T')[0]}.csv`)
+  }
+
   const selectedCategoryName = formData.categoryId
     ? categories.find(c => c.id === formData.categoryId)?.name
     : undefined
@@ -154,14 +212,27 @@ export default function TransactionsClient({
               </Link>
               <h1 className="text-xl font-bold text-foreground">Mis Transacciones</h1>
             </div>
-            <Button 
-              onClick={() => setIsAddingNew(!isAddingNew)}
-              className="gap-2 shadow-sm"
-              size="sm"
-            >
-              <Plus className="w-4 h-4" />
-              {isAddingNew ? 'Cancelar' : 'Nueva transacción'}
-            </Button>
+            <div className="flex gap-2">
+              {transactions.length > 0 && (
+                <Button 
+                  onClick={handleDownloadCSV}
+                  className="gap-2 shadow-sm"
+                  size="sm"
+                  variant="outline"
+                >
+                  <Download className="w-4 h-4" />
+                  Descargar CSV
+                </Button>
+              )}
+              <Button 
+                onClick={() => setIsAddingNew(!isAddingNew)}
+                className="gap-2 shadow-sm"
+                size="sm"
+              >
+                <Plus className="w-4 h-4" />
+                {isAddingNew ? 'Cancelar' : 'Nueva transacción'}
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -208,7 +279,7 @@ export default function TransactionsClient({
                     <Label htmlFor="currency">Moneda</Label>
                     <Select 
                       value={formData.currency} 
-                      onValueChange={(value) => value && setFormData({...formData, currency: value})}
+                      onValueChange={handleCurrencyChange}
                     >
                       <SelectTrigger id="currency" className="w-full h-10">
                         <SelectValue>
@@ -220,6 +291,11 @@ export default function TransactionsClient({
                         <SelectItem value="USD">Dólares (US$)</SelectItem>
                       </SelectContent>
                     </Select>
+                    {formData.currency === 'USD' && exchangeRate && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Tasa: $1 USD = ${exchangeRate.toFixed(2)} ARS
+                      </p>
+                    )}
                   </div>
 
                   {/* Monto */}
@@ -247,7 +323,7 @@ export default function TransactionsClient({
                       id="date"
                       type="date"
                       value={formData.date}
-                      onChange={(e) => setFormData({...formData, date: e.target.value})}
+                      onChange={(e) => handleDateChange(e.target.value)}
                       required
                       className="h-10"
                     />

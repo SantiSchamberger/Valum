@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { LogOut, Plus, TrendingUp, TrendingDown, Wallet, BarChart3, Users, DollarSign } from 'lucide-react'
+import { LogOut, Plus, TrendingUp, TrendingDown, Wallet, BarChart3, Users, DollarSign, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 
 interface DashboardClientProps {
@@ -17,6 +17,9 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
   const router = useRouter()
   const supabase = createClient()
   const [isLoading, setIsLoading] = useState(false)
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [isRefreshingRate, setIsRefreshingRate] = useState(false)
   const [stats, setStats] = useState({
     totalIncomeARS: 0,
     totalExpenseARS: 0,
@@ -27,8 +30,31 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
     hasUSD: false,
   })
 
+  // Obtener tipo de cambio
+  const fetchExchangeRate = async () => {
+    try {
+      setIsRefreshingRate(true)
+      const response = await fetch('/api/get-exchange-rate')
+      const data = await response.json()
+      setExchangeRate(data.rate)
+      setLastUpdated(new Date())
+    } catch (error) {
+      console.error('Error fetching exchange rate:', error)
+    } finally {
+      setIsRefreshingRate(false)
+    }
+  }
+
   useEffect(() => {
     fetchStats()
+    fetchExchangeRate()
+
+    // Actualizar tipo de cambio cada 5 minutos
+    const interval = setInterval(() => {
+      fetchExchangeRate()
+    }, 5 * 60 * 1000)
+
+    return () => clearInterval(interval)
   }, [])
 
   const fetchStats = async () => {
@@ -209,6 +235,63 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
           </Card>
         </div>
 
+        {/* Exchange Rate Widget */}
+        {exchangeRate && (
+          <Card className="border-0 shadow-md mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    Tipo de Cambio Oficial
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    {lastUpdated && `Actualizado: ${lastUpdated.toLocaleTimeString('es-AR')}`}
+                  </CardDescription>
+                </div>
+                <button
+                  onClick={fetchExchangeRate}
+                  disabled={isRefreshingRate}
+                  className="p-2 hover:bg-white/50 dark:hover:bg-black/20 rounded-lg transition-colors"
+                  title="Actualizar"
+                >
+                  <RefreshCw
+                    className={`w-5 h-5 text-blue-600 dark:text-blue-400 ${isRefreshingRate ? 'animate-spin' : ''}`}
+                  />
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <div>
+                  <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+                    ${exchangeRate.toFixed(2)}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">ARS por 1 USD</p>
+                </div>
+                <div className="hidden sm:block border-l border-blue-200 dark:border-blue-800 h-16" />
+                <div className="hidden sm:block">
+                  <p className="text-sm text-muted-foreground mb-2">Referencia:</p>
+                  <div className="space-y-1">
+                    <p className="text-sm">
+                      <span className="font-semibold">100 USD:</span>{' '}
+                      <span className="text-blue-600 dark:text-blue-400 font-bold">
+                        ${(exchangeRate * 100).toFixed(2)}
+                      </span>
+                    </p>
+                    <p className="text-sm">
+                      <span className="font-semibold">1000 USD:</span>{' '}
+                      <span className="text-blue-600 dark:text-blue-400 font-bold">
+                        ${(exchangeRate * 1000).toFixed(2)}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Quick Actions Card */}
@@ -234,6 +317,12 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
                   <Button variant="outline" className="w-full hover:shadow-sm" size="lg">
                     <BarChart3 className="w-4 h-4 mr-2" />
                     Ver Análisis
+                  </Button>
+                </Link>
+                <Link href="/dashboard/exchange-rates">
+                  <Button variant="outline" className="w-full hover:shadow-sm" size="lg">
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Tipo de Cambio
                   </Button>
                 </Link>
                 {profile.role === 'client' && (

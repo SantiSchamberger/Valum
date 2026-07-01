@@ -3,7 +3,8 @@
 import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, BarChart3 } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import {
   PieChart,
@@ -50,6 +51,16 @@ export default function AnalyticsClient({
   categories,
 }: AnalyticsClientProps) {
   const [selectedCurrency, setSelectedCurrency] = useState<'ARS' | 'USD'>('ARS')
+  const [selectedMonth, setSelectedMonth] = useState<string>('')
+  const [selectedYear, setSelectedYear] = useState<string>('')
+
+  // Initialize selected month and year to current
+  const now = new Date()
+  const defaultMonth = String(now.getMonth() + 1).padStart(2, '0')
+  const defaultYear = String(now.getFullYear())
+
+  const currentMonth = selectedMonth || defaultMonth
+  const currentYear = selectedYear || defaultYear
 
   const hasUSD = useMemo(() => transactions.some(t => t.currency === 'USD'), [transactions])
 
@@ -58,18 +69,50 @@ export default function AnalyticsClient({
     [transactions, selectedCurrency]
   )
 
-  const analytics = useMemo(() => {
-    const totalIncome = filteredTransactions
+  // Get unique years from transactions
+  const years = useMemo(() => {
+    const yearSet = new Set(transactions.map(t => {
+      const date = new Date(t.date)
+      return date.getFullYear().toString()
+    }))
+    return Array.from(yearSet).sort((a, b) => Number(b) - Number(a))
+  }, [transactions])
+
+  // Get months in selected year
+  const months = useMemo(() => {
+    const monthSet = new Set(
+      filteredTransactions
+        .filter(t => {
+          const date = new Date(t.date)
+          return date.getFullYear().toString() === currentYear
+        })
+        .map(t => {
+          const date = new Date(t.date)
+          return String(date.getMonth() + 1).padStart(2, '0')
+        })
+    )
+    return Array.from(monthSet).sort((a, b) => Number(b) - Number(a))
+  }, [filteredTransactions, currentYear])
+
+  const monthlyAnalytics = useMemo(() => {
+    const monthTransactions = filteredTransactions.filter(t => {
+      const date = new Date(t.date)
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const year = date.getFullYear().toString()
+      return month === currentMonth && year === currentYear
+    })
+
+    const totalIncome = monthTransactions
       .filter(t => t.type === 'income')
       .reduce((sum, t) => sum + t.amount, 0)
 
-    const totalExpense = filteredTransactions
+    const totalExpense = monthTransactions
       .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + t.amount, 0)
 
     const balance = totalIncome - totalExpense
 
-    const expensesByCategory = filteredTransactions
+    const expensesByCategory = monthTransactions
       .filter(t => t.type === 'expense')
       .reduce((acc: any, t) => {
         const categoryName = t.categories?.name || 'Sin categoría'
@@ -85,6 +128,41 @@ export default function AnalyticsClient({
         }
         return acc
       }, [])
+
+    const dailyTrend = monthTransactions
+      .reduce((acc: any, t) => {
+        const date = new Date(t.date)
+        const dayKey = date.toLocaleDateString('es-ES')
+        const existing = acc.find((item: any) => item.date === dayKey)
+
+        if (existing) {
+          if (t.type === 'income') existing.income += t.amount
+          else existing.expense += t.amount
+        } else {
+          acc.push({
+            date: dayKey,
+            income: t.type === 'income' ? t.amount : 0,
+            expense: t.type === 'expense' ? t.amount : 0,
+          })
+        }
+        return acc
+      }, [])
+      .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+    return { totalIncome, totalExpense, balance, expensesByCategory, dailyTrend, monthTransactions }
+  }, [filteredTransactions, currentMonth, currentYear])
+
+  // Also keep the annual analytics for the trend chart
+  const analytics = useMemo(() => {
+    const totalIncome = filteredTransactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + t.amount, 0)
+
+    const totalExpense = filteredTransactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + t.amount, 0)
+
+    const balance = totalIncome - totalExpense
 
     const transactionsByMonth = filteredTransactions.reduce((acc: any, t) => {
       const date = new Date(t.date)
@@ -110,34 +188,13 @@ export default function AnalyticsClient({
       })
       .slice(-12)
 
-    const dailyTrend = filteredTransactions
-      .filter(t => {
-        const date = new Date(t.date)
-        const now = new Date()
-        const daysAgo = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
-        return daysAgo <= 30
-      })
-      .reduce((acc: any, t) => {
-        const date = new Date(t.date)
-        const dayKey = date.toLocaleDateString('es-ES')
-        const existing = acc.find((item: any) => item.date === dayKey)
-
-        if (existing) {
-          if (t.type === 'income') existing.income += t.amount
-          else existing.expense += t.amount
-        } else {
-          acc.push({
-            date: dayKey,
-            income: t.type === 'income' ? t.amount : 0,
-            expense: t.type === 'expense' ? t.amount : 0,
-          })
-        }
-        return acc
-      }, [])
-      .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
-
-    return { totalIncome, totalExpense, balance, expensesByCategory, transactionsByMonth, dailyTrend }
+    return { totalIncome, totalExpense, balance, transactionsByMonth }
   }, [filteredTransactions])
+
+  const getMonthName = (monthNum: string) => {
+    const date = new Date(2024, parseInt(monthNum) - 1)
+    return date.toLocaleString('es-ES', { month: 'long' })
+  }
 
   const currSymbol = selectedCurrency === 'USD' ? 'US$' : '$'
   const fmt = (v: number) => `${currSymbol}${v.toFixed(2)}`
@@ -210,16 +267,54 @@ export default function AnalyticsClient({
           </Card>
         ) : (
           <>
-            {/* Summary Cards */}
+            {/* Month/Year Selector */}
+            <Card className="border-0 shadow-md mb-6">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-bold">Resumen Mensual</CardTitle>
+                <CardDescription>Selecciona el mes y año para analizar</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-3 items-center">
+                  <Select value={currentYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Año" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {years.map(year => (
+                        <SelectItem key={year} value={year}>{year}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={currentMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Mes" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({length: 12}, (_, i) => {
+                        const monthNum = String(i + 1).padStart(2, '0')
+                        return (
+                          <SelectItem key={monthNum} value={monthNum}>
+                            {getMonthName(monthNum)}
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Summary Cards - Monthly */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
               <Card className="border-0 shadow-md overflow-hidden">
                 <div className="h-1 bg-gradient-to-r from-emerald-400 to-green-500" />
                 <CardContent className="pt-5 pb-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground mb-1 font-medium">Ingresos Totales</p>
+                      <p className="text-sm text-muted-foreground mb-1 font-medium">Ingresos</p>
                       <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-                        {fmt(analytics.totalIncome)}
+                        {fmt(monthlyAnalytics.totalIncome)}
                       </p>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shadow-sm">
@@ -234,9 +329,9 @@ export default function AnalyticsClient({
                 <CardContent className="pt-5 pb-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground mb-1 font-medium">Gastos Totales</p>
+                      <p className="text-sm text-muted-foreground mb-1 font-medium">Gastos</p>
                       <p className="text-3xl font-bold text-rose-600 dark:text-rose-400">
-                        {fmt(analytics.totalExpense)}
+                        {fmt(monthlyAnalytics.totalExpense)}
                       </p>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center shadow-sm">
@@ -247,21 +342,21 @@ export default function AnalyticsClient({
               </Card>
 
               <Card className="border-0 shadow-md overflow-hidden">
-                <div className={`h-1 ${analytics.balance >= 0 ? 'bg-gradient-to-r from-blue-400 to-indigo-500' : 'bg-gradient-to-r from-orange-400 to-red-500'}`} />
+                <div className={`h-1 ${monthlyAnalytics.balance >= 0 ? 'bg-gradient-to-r from-blue-400 to-indigo-500' : 'bg-gradient-to-r from-orange-400 to-red-500'}`} />
                 <CardContent className="pt-5 pb-5">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground mb-1 font-medium">Balance</p>
-                      <p className={`text-3xl font-bold ${analytics.balance >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'}`}>
-                        {fmt(analytics.balance)}
+                      <p className={`text-3xl font-bold ${monthlyAnalytics.balance >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                        {fmt(monthlyAnalytics.balance)}
                       </p>
                     </div>
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${
-                      analytics.balance >= 0
+                      monthlyAnalytics.balance >= 0
                         ? 'bg-blue-100 dark:bg-blue-900/30'
                         : 'bg-orange-100 dark:bg-orange-900/30'
                     }`}>
-                      <DollarSign className={`w-6 h-6 ${analytics.balance >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'}`} />
+                      <DollarSign className={`w-6 h-6 ${monthlyAnalytics.balance >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'}`} />
                     </div>
                   </div>
                 </CardContent>
@@ -270,33 +365,39 @@ export default function AnalyticsClient({
 
             {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              {analytics.expensesByCategory.length > 0 && (
+              {monthlyAnalytics.expensesByCategory.length > 0 && (
                 <Card className="border-0 shadow-md">
                   <div className="h-1 bg-gradient-to-r from-violet-400 to-purple-500 rounded-t-lg" />
                   <CardHeader className="pt-5">
                     <CardTitle className="text-base font-bold">Gastos por Categoría</CardTitle>
-                    <CardDescription>Distribución de tus gastos {selectedCurrency === 'USD' ? 'en dólares' : 'en pesos'}</CardDescription>
+                    <CardDescription>Distribución de gastos en {getMonthName(currentMonth)} {currentYear}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={280}>
-                      <PieChart>
-                        <Pie
-                          data={analytics.expensesByCategory}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ name, value }) => `${name}: ${currSymbol}${value.toFixed(0)}`}
-                          outerRadius={90}
-                          fill="#8884d8"
-                          dataKey="value"
-                        >
-                          {analytics.expensesByCategory.map((entry: any, index: number) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(value) => fmt(value as number)} />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    {monthlyAnalytics.expensesByCategory.length === 0 ? (
+                      <div className="h-[280px] flex items-center justify-center text-muted-foreground">
+                        No hay gastos registrados este mes
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={280}>
+                        <PieChart>
+                          <Pie
+                            data={monthlyAnalytics.expensesByCategory}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={({ name, value }) => `${name}: ${currSymbol}${value.toFixed(0)}`}
+                            outerRadius={90}
+                            fill="#8884d8"
+                            dataKey="value"
+                          >
+                            {monthlyAnalytics.expensesByCategory.map((entry: any, index: number) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value) => fmt(value as number)} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    )}
                   </CardContent>
                 </Card>
               )}
@@ -305,8 +406,8 @@ export default function AnalyticsClient({
                 <Card className="border-0 shadow-md">
                   <div className="h-1 bg-gradient-to-r from-blue-400 to-cyan-500 rounded-t-lg" />
                   <CardHeader className="pt-5">
-                    <CardTitle className="text-base font-bold">Tendencia Mensual</CardTitle>
-                    <CardDescription>Ingresos vs Gastos por mes</CardDescription>
+                    <CardTitle className="text-base font-bold">Tendencia Anual</CardTitle>
+                    <CardDescription>Ingresos vs Gastos por mes (últimos 12 meses)</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={280}>
@@ -325,16 +426,16 @@ export default function AnalyticsClient({
               )}
             </div>
 
-            {analytics.dailyTrend.length > 0 && (
+            {monthlyAnalytics.dailyTrend.length > 0 && (
               <Card className="border-0 shadow-md">
                 <div className="h-1 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-t-lg" />
                 <CardHeader className="pt-5">
-                  <CardTitle className="text-base font-bold">Tendencia Diaria — Últimos 30 días</CardTitle>
-                  <CardDescription>Movimientos diarios de tu cuenta</CardDescription>
+                  <CardTitle className="text-base font-bold">Tendencia Diaria — {getMonthName(currentMonth)} {currentYear}</CardTitle>
+                  <CardDescription>Movimientos diarios de tu cuenta este mes</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={360}>
-                    <LineChart data={analytics.dailyTrend}>
+                    <LineChart data={monthlyAnalytics.dailyTrend}>
                       <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-10" />
                       <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                       <YAxis tick={{ fontSize: 12 }} />
