@@ -42,6 +42,7 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
     'Guarda un fondo de emergencia con al menos 3 meses de gastos fijos.',
     'Paga primero las deudas con mayores tasas de interés.',
     'Revisa tus metas financieras cada trimestre y ajusta tu plan.',
+    'Contacta con tu asesor de confianza para optimizar tus inversiones y ahorros.',
   ]
 
   const getNextTipIndex = (seen: number[]) => {
