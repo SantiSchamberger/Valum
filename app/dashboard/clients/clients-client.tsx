@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Users, Check, X, Download } from 'lucide-react'
+import { ArrowLeft, Users, Check, X, Download, Copy } from 'lucide-react'
 import Link from 'next/link'
 
 interface ClientRelation {
@@ -26,6 +26,8 @@ export default function ClientsClient({ initialRelations }: ClientsClientProps) 
   const supabase = createClient()
   const [relations, setRelations] = useState<ClientRelation[]>(initialRelations || [])
   const [isLoading, setIsLoading] = useState<string | null>(null)
+  const [referralLink, setReferralLink] = useState('')
+  const [copyStatus, setCopyStatus] = useState('Copiar enlace')
 
   const handleApprove = async (relationId: string) => {
     setIsLoading(relationId)
@@ -69,6 +71,33 @@ export default function ClientsClient({ initialRelations }: ClientsClientProps) 
     }
   }
 
+  useEffect(() => {
+    const loadReferralLink = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user && typeof window !== 'undefined') {
+          setReferralLink(`${window.location.origin}/auth/sign-up?referrer=${encodeURIComponent(user.id)}`)
+        }
+      } catch (error) {
+        console.error('Error loading referral link:', error)
+      }
+    }
+
+    loadReferralLink()
+  }, [supabase])
+
+  const handleCopyReferralLink = async () => {
+    if (!referralLink) return
+    try {
+      await navigator.clipboard.writeText(referralLink)
+      setCopyStatus('Copiado!')
+    } catch (error) {
+      console.error('Error copying referral link:', error)
+      setCopyStatus('Error al copiar')
+    }
+    setTimeout(() => setCopyStatus('Copiar enlace'), 2500)
+  }
+
   const handleDownload = async (clientId: string, clientName: string) => {
     try {
       const response = await fetch(`/api/advisor-client-data?client_id=${clientId}&format=csv`)
@@ -109,6 +138,28 @@ export default function ClientsClient({ initialRelations }: ClientsClientProps) 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid gap-6">
+          <Card className="border-0 shadow-md">
+            <CardHeader>
+              <CardTitle className="text-lg font-bold">Enlace de referido</CardTitle>
+              <CardDescription>Compartí este link para que un cliente cree su cuenta y te encuentre fácilmente.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="min-w-0 flex-1 rounded-xl border border-border bg-muted/50 px-3 py-3 text-sm text-foreground break-all">
+                  {referralLink || 'Generando enlace...'}
+                </div>
+                <Button
+                  onClick={handleCopyReferralLink}
+                  disabled={!referralLink}
+                  className="whitespace-nowrap"
+                  size="lg"
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  {copyStatus}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
           {(!relations || relations.length === 0) ? (
             <Card className="border-0 shadow-md">
               <CardContent className="pt-12 pb-12 text-center">
@@ -121,8 +172,9 @@ export default function ClientsClient({ initialRelations }: ClientsClientProps) 
                 <p className="text-sm text-muted-foreground mb-6">
                   Los clientes podrán solicitar conectarse contigo
                 </p>
-                <Button disabled>
-                  Invitar Cliente
+                <Button onClick={handleCopyReferralLink} disabled={!referralLink} className="gap-2">
+                  <Copy className="w-4 h-4" />
+                  Copiar link de referido
                 </Button>
               </CardContent>
             </Card>
