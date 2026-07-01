@@ -18,6 +18,7 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
   const supabase = createClient()
   const [isLoading, setIsLoading] = useState(false)
   const [exchangeRate, setExchangeRate] = useState<number | null>(null)
+  const [previousRate, setPreviousRate] = useState<number | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [isRefreshingRate, setIsRefreshingRate] = useState(false)
   const [stats, setStats] = useState({
@@ -36,10 +37,26 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
       setIsRefreshingRate(true)
       const response = await fetch('/api/get-exchange-rate')
       const data = await response.json()
-      setExchangeRate(data.rate)
+      const currentRate = typeof data.rate === 'number' ? data.rate : null
+      setExchangeRate(currentRate)
       setLastUpdated(new Date())
+
+      const { data: history } = await supabase
+        .from('exchange_rates')
+        .select('rate,date')
+        .eq('currency_from', 'USD')
+        .eq('currency_to', 'ARS')
+        .order('date', { ascending: false })
+        .limit(2)
+
+      if (history && history.length > 1) {
+        setPreviousRate(history[1].rate)
+      } else {
+        setPreviousRate(null)
+      }
     } catch (error) {
       console.error('Error fetching exchange rate:', error)
+      setPreviousRate(null)
     } finally {
       setIsRefreshingRate(false)
     }
@@ -103,6 +120,12 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
     await supabase.auth.signOut()
     router.push('/auth/login')
   }
+
+  const change = exchangeRate !== null && previousRate !== null ? exchangeRate - previousRate : null
+  const changePercent = change !== null && previousRate !== null
+    ? ((change / previousRate) * 100).toFixed(2)
+    : null
+  const changeDirection = change !== null ? (change >= 0 ? 'up' : 'down') : null
 
   const formatAmount = (amount: number, currency: 'ARS' | 'USD' = 'ARS') => {
     return currency === 'USD'
@@ -236,55 +259,62 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
         </div>
 
         {/* Exchange Rate Widget */}
-        {exchangeRate && (
-          <Card className="border-0 shadow-md mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg font-bold flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                    Tipo de Cambio Oficial
-                  </CardTitle>
-                  <CardDescription className="mt-1">
-                    {lastUpdated && `Actualizado: ${lastUpdated.toLocaleTimeString('es-AR')}`}
-                  </CardDescription>
+        {exchangeRate !== null && (
+          <Card className="border-0 shadow-md overflow-hidden mb-8">
+            <div className="h-1 w-full bg-gradient-to-r from-blue-400 to-indigo-500" />
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+                  <DollarSign className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 </div>
-                <button
-                  onClick={fetchExchangeRate}
-                  disabled={isRefreshingRate}
-                  className="p-2 hover:bg-white/50 dark:hover:bg-black/20 rounded-lg transition-colors"
-                  title="Actualizar"
-                >
-                  <RefreshCw
-                    className={`w-5 h-5 text-blue-600 dark:text-blue-400 ${isRefreshingRate ? 'animate-spin' : ''}`}
-                  />
-                </button>
-              </div>
+                Tipo de Cambio Oficial
+              </CardTitle>
+              <CardDescription>Último cambio oficial</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
+            <CardContent className="pb-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+                  <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
                     ${exchangeRate.toFixed(2)}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">ARS por 1 USD</p>
+                  {lastUpdated && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Actualizado: {lastUpdated.toLocaleTimeString('es-AR')}
+                    </p>
+                  )}
                 </div>
-                <div className="hidden sm:block border-l border-blue-200 dark:border-blue-800 h-16" />
-                <div className="hidden sm:block">
-                  <p className="text-sm text-muted-foreground mb-2">Referencia:</p>
-                  <div className="space-y-1">
-                    <p className="text-sm">
-                      <span className="font-semibold">100 USD:</span>{' '}
-                      <span className="text-blue-600 dark:text-blue-400 font-bold">
-                        ${(exchangeRate * 100).toFixed(2)}
-                      </span>
-                    </p>
-                    <p className="text-sm">
-                      <span className="font-semibold">1000 USD:</span>{' '}
-                      <span className="text-blue-600 dark:text-blue-400 font-bold">
-                        ${(exchangeRate * 1000).toFixed(2)}
-                      </span>
-                    </p>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={fetchExchangeRate}
+                    disabled={isRefreshingRate}
+                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg transition-colors"
+                    title="Actualizar"
+                  >
+                    <RefreshCw
+                      className={`w-5 h-5 text-blue-600 dark:text-blue-400 ${isRefreshingRate ? 'animate-spin' : ''}`}
+                    />
+                  </button>
+                  <div className={`rounded-xl px-4 py-3 ${change !== null ? change >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-950/50 dark:text-slate-300'}`}>
+                    {change !== null ? (
+                      <div className="flex items-center gap-2">
+                        {change >= 0 ? (
+                          <TrendingUp className="w-5 h-5" />
+                        ) : (
+                          <TrendingDown className="w-5 h-5" />
+                        )}
+                        <div>
+                          <p className="text-base font-semibold">
+                            {change >= 0 ? '+' : ''}${Math.abs(change).toFixed(2)}
+                          </p>
+                          <p className="text-sm opacity-90">
+                            {changePercent}% {change >= 0 ? 'subió' : 'bajó'}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No hay cambio previo registrado</p>
+                    )}
                   </div>
                 </div>
               </div>
