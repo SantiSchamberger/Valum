@@ -44,11 +44,11 @@ export default async function AdvisorsPage() {
       .order('requested_at', { ascending: false })
     advisorRelations = data
   } else {
-    // Admin or advisor: list all advisors from profiles table
+    // Admin or advisor: list all advisors and admin from profiles table
     const { data } = await supabase
       .from('profiles')
       .select('id, email, full_name, phone, created_at, role')
-      .eq('role', 'advisor')
+      .in('role', ['advisor', 'admin'])
       .order('full_name', { ascending: true })
     allAdvisors = data
   }
