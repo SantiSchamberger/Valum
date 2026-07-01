@@ -64,7 +64,9 @@ export default function TransactionsClient({
   })
 
   // Obtener el tipo de cambio cuando se selecciona USD
-  const handleCurrencyChange = async (currency: string) => {
+  const handleCurrencyChange = async (currency: string | null) => {
+    if (!currency) return
+
     setFormData({...formData, currency})
     
     if (currency === 'USD') {
