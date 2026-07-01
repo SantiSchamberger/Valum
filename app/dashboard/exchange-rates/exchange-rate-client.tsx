@@ -54,17 +54,34 @@ export default function ExchangeRateClient({ exchangeRates }: ExchangeRateClient
     }
   }
 
-  const chartData = rates.map(r => ({
+  const sortedRates = [...rates].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+  const chartData = sortedRates.map(r => ({
     date: new Date(r.date).toLocaleDateString('es-AR', { month: 'short', day: 'numeric' }),
     rate: r.rate,
-    fullDate: r.date
+    fullDate: r.date,
   }))
 
-  const minRate = Math.min(...rates.map(r => r.rate))
-  const maxRate = Math.max(...rates.map(r => r.rate))
-  const avgRate = rates.reduce((sum, r) => sum + r.rate, 0) / rates.length
-  const change = currentRate && rates.length > 0 ? currentRate - rates[0].rate : 0
-  const changePercent = rates.length > 0 ? ((change / rates[0].rate) * 100).toFixed(2) : '0.00'
+  const minRate = sortedRates.length > 0 ? Math.min(...sortedRates.map(r => r.rate)) : null
+  const maxRate = sortedRates.length > 0 ? Math.max(...sortedRates.map(r => r.rate)) : null
+  const avgRate = sortedRates.length > 0 ? sortedRates.reduce((sum, r) => sum + r.rate, 0) / sortedRates.length : null
+
+  const today = new Date().toISOString().split('T')[0]
+  const latestRate = sortedRates.length > 0 ? sortedRates[sortedRates.length - 1] : null
+  const previousRate: number | null = (() => {
+    if (!latestRate) return null
+    if (sortedRates.length === 1) {
+      return latestRate.date === today ? null : latestRate.rate
+    }
+    return latestRate.date === today
+      ? sortedRates[sortedRates.length - 2].rate
+      : latestRate.rate
+  })()
+
+  const change: number | null = currentRate !== null && previousRate !== null ? currentRate - previousRate : null
+  const changePercent: string | null = change !== null && previousRate !== null
+    ? ((change / previousRate) * 100).toFixed(2)
+    : null
 
   return (
     <div className="min-h-screen bg-background">
@@ -109,10 +126,12 @@ export default function ExchangeRateClient({ exchangeRates }: ExchangeRateClient
             <div className="h-1 bg-gradient-to-r from-blue-400 to-indigo-500" />
             <CardContent className="pt-5 pb-5">
               <p className="text-xs text-muted-foreground font-medium mb-2">Tasa Actual</p>
-              {currentRate && (
+              {currentRate !== null ? (
                 <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
                   ${currentRate.toFixed(2)}
                 </p>
+              ) : (
+                <p className="text-3xl font-bold text-muted-foreground">Cargando...</p>
               )}
               <p className="text-xs text-muted-foreground mt-2">Por 1 USD</p>
             </CardContent>
@@ -124,7 +143,7 @@ export default function ExchangeRateClient({ exchangeRates }: ExchangeRateClient
             <CardContent className="pt-5 pb-5">
               <p className="text-xs text-muted-foreground font-medium mb-2">Mínimo</p>
               <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-                ${minRate.toFixed(2)}
+                {minRate !== null ? `$${minRate.toFixed(2)}` : 'Sin datos'}
               </p>
               <p className="text-xs text-muted-foreground mt-2">Últimos 30 días</p>
             </CardContent>
@@ -136,7 +155,7 @@ export default function ExchangeRateClient({ exchangeRates }: ExchangeRateClient
             <CardContent className="pt-5 pb-5">
               <p className="text-xs text-muted-foreground font-medium mb-2">Máximo</p>
               <p className="text-3xl font-bold text-rose-600 dark:text-rose-400">
-                ${maxRate.toFixed(2)}
+                {maxRate !== null ? `$${maxRate.toFixed(2)}` : 'Sin datos'}
               </p>
               <p className="text-xs text-muted-foreground mt-2">Últimos 30 días</p>
             </CardContent>
@@ -144,22 +163,30 @@ export default function ExchangeRateClient({ exchangeRates }: ExchangeRateClient
 
           {/* Change */}
           <Card className="border-0 shadow-md overflow-hidden">
-            <div className={`h-1 ${change >= 0 ? 'bg-gradient-to-r from-rose-400 to-red-500' : 'bg-gradient-to-r from-emerald-400 to-green-500'}`} />
+            <div className={`h-1 ${change === null ? 'bg-slate-200 dark:bg-slate-800' : change >= 0 ? 'bg-gradient-to-r from-rose-400 to-red-500' : 'bg-gradient-to-r from-emerald-400 to-green-500'}`} />
             <CardContent className="pt-5 pb-5">
-              <p className="text-xs text-muted-foreground font-medium mb-2">Cambio</p>
-              <div className="flex items-center gap-2">
-                <p className={`text-3xl font-bold ${change >= 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                  {change >= 0 ? '+' : ''}{change.toFixed(2)}
-                </p>
-                {change !== 0 && (
-                  change >= 0 ? (
-                    <TrendingUp className="w-5 h-5 text-rose-600 dark:text-rose-400" />
-                  ) : (
-                    <TrendingDown className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                  )
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">{changePercent}% en 30d</p>
+              <p className="text-xs text-muted-foreground font-medium mb-2">Diferencia vs anterior</p>
+              {change !== null ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    <p className={`text-3xl font-bold ${change >= 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                      {change >= 0 ? '+' : ''}{change.toFixed(2)}
+                    </p>
+                    {change !== 0 ? (
+                      change >= 0 ? (
+                        <TrendingUp className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                      ) : (
+                        <TrendingDown className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                      )
+                    ) : null}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {changePercent ? `${changePercent}% respecto al anterior` : 'No hay datos anteriores'}
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">No hay dato anterior para comparar</p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -241,7 +268,7 @@ export default function ExchangeRateClient({ exchangeRates }: ExchangeRateClient
         )}
 
         {/* Info Card */}
-        <Card className="border-0 shadow-md mt-8 bg-blue-50 dark:bg-blue-950/30">
+        <Card className="border-0 shadow-md mt-8">
           <CardHeader>
             <CardTitle className="text-base font-bold">Información</CardTitle>
           </CardHeader>
