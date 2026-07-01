@@ -54,6 +54,14 @@ export default function AnalyticsClient({
   const [selectedMonth, setSelectedMonth] = useState<string>('')
   const [selectedYear, setSelectedYear] = useState<string>('')
 
+  const handleSelectedYearChange = (value: string | null) => {
+    setSelectedYear(value ?? '')
+  }
+
+  const handleSelectedMonthChange = (value: string | null) => {
+    setSelectedMonth(value ?? '')
+  }
+
   // Initialize selected month and year to current
   const now = new Date()
   const defaultMonth = String(now.getMonth() + 1).padStart(2, '0')
@@ -275,7 +283,7 @@ export default function AnalyticsClient({
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-3 items-center">
-                  <Select value={currentYear} onValueChange={setSelectedYear}>
+                  <Select value={currentYear} onValueChange={handleSelectedYearChange}>
                     <SelectTrigger className="w-32">
                       <SelectValue placeholder="Año" />
                     </SelectTrigger>
@@ -286,7 +294,7 @@ export default function AnalyticsClient({
                     </SelectContent>
                   </Select>
 
-                  <Select value={currentMonth} onValueChange={setSelectedMonth}>
+                  <Select value={currentMonth} onValueChange={handleSelectedMonthChange}>
                     <SelectTrigger className="w-40">
                       <SelectValue placeholder="Mes" />
                     </SelectTrigger>
