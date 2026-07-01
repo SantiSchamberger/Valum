@@ -23,7 +23,7 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
   const [isRefreshingRate, setIsRefreshingRate] = useState(false)
   const [currentTipIndex, setCurrentTipIndex] = useState(0)
   const [tipHistory, setTipHistory] = useState<number[]>([])
-  const [notifications, setNotifications] = useState<Array<{ id: string; title: string; message: string; created_at: string; admin_email: string }>>([])
+  const [notifications, setNotifications] = useState<Array<{ id: string; title: string; message: string; created_at: string; admin_email: string; admin_name?: string }>>([])
   const [stats, setStats] = useState({
     totalIncomeARS: 0,
     totalExpenseARS: 0,
@@ -188,7 +188,7 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
     try {
       const { data } = await supabase
         .from('notifications')
-        .select('id,title,message,created_at,admin_email')
+        .select('id,title,message,created_at,admin_name,admin_email')
         .order('created_at', { ascending: false })
         .limit(4)
 
@@ -443,7 +443,7 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
                     <p className="text-sm text-muted-foreground mt-1">{note.message}</p>
                     <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
                       <span>{new Date(note.created_at).toLocaleDateString('es-AR')}</span>
-                      <span>Por {note.admin_email}</span>
+                      <span>Por {note.admin_name || note.admin_email}</span>
                     </div>
                   </div>
                 ))

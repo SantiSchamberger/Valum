@@ -16,7 +16,7 @@ import {
 import { LogOut, ArrowLeft, Edit2, ShieldCheck, History, Users, CheckCircle2, XCircle, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 interface Profile {
   id: string
@@ -34,6 +34,15 @@ interface AuditEntry {
   targetEmail: string
   oldRole: string
   newRole: string
+}
+
+interface NotificationItem {
+  id: string
+  title: string
+  message: string
+  admin_email: string
+  admin_name?: string
+  created_at: string
 }
 
 const roleLabels: Record<string, string> = {
@@ -65,11 +74,37 @@ export default function AdminClient({
   const [notificationTitle, setNotificationTitle] = useState('')
   const [notificationMessage, setNotificationMessage] = useState('')
   const [isSendingNotification, setIsSendingNotification] = useState(false)
+  const [notifications, setNotifications] = useState<NotificationItem[]>([])
+  const [editingNotificationId, setEditingNotificationId] = useState<string | null>(null)
+  const [editedNotificationTitle, setEditedNotificationTitle] = useState('')
+  const [editedNotificationMessage, setEditedNotificationMessage] = useState('')
+  const [isUpdatingNotification, setIsUpdatingNotification] = useState(false)
+  const [isDeletingNotification, setIsDeletingNotification] = useState(false)
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message })
     setTimeout(() => setNotification(null), 4000)
   }
+
+  const fetchNotifications = async () => {
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('id,title,message,admin_name,admin_email,created_at')
+        .order('created_at', { ascending: false })
+        .limit(20)
+
+      if (error) throw error
+      if (data) setNotifications(data)
+    } catch (err) {
+      console.error('Error fetching notifications:', err)
+    }
+  }
+
+  useEffect(() => {
+    fetchNotifications()
+  }, [])
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -141,17 +176,79 @@ export default function AdminClient({
       const supabase = createClient()
       const { error } = await supabase
         .from('notifications')
-        .insert([{ title: notificationTitle.trim(), message: notificationMessage.trim(), admin_email: currentUser.email }])
+        .insert([{ title: notificationTitle.trim(), message: notificationMessage.trim(), admin_email: currentUser.email, admin_name: currentUser.full_name || currentUser.email }])
 
       if (error) throw error
 
       setNotificationTitle('')
       setNotificationMessage('')
       showNotification('success', 'Notificación enviada correctamente.')
+      fetchNotifications()
     } catch (err) {
       showNotification('error', err instanceof Error ? err.message : 'Error al enviar la notificación')
     } finally {
       setIsSendingNotification(false)
+    }
+  }
+
+  const startEditingNotification = (notification: NotificationItem) => {
+    setEditingNotificationId(notification.id)
+    setEditedNotificationTitle(notification.title)
+    setEditedNotificationMessage(notification.message)
+  }
+
+  const cancelEditingNotification = () => {
+    setEditingNotificationId(null)
+    setEditedNotificationTitle('')
+    setEditedNotificationMessage('')
+  }
+
+  const handleUpdateNotification = async () => {
+    if (!editingNotificationId) return
+    if (!editedNotificationTitle.trim() || !editedNotificationMessage.trim()) {
+      showNotification('error', 'Completá título y mensaje antes de guardar.')
+      return
+    }
+
+    setIsUpdatingNotification(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('notifications')
+        .update({ title: editedNotificationTitle.trim(), message: editedNotificationMessage.trim() })
+        .eq('id', editingNotificationId)
+
+      if (error) throw error
+
+      showNotification('success', 'Notificación actualizada correctamente.')
+      cancelEditingNotification()
+      fetchNotifications()
+    } catch (err) {
+      showNotification('error', err instanceof Error ? err.message : 'Error al actualizar la notificación')
+    } finally {
+      setIsUpdatingNotification(false)
+    }
+  }
+
+  const handleDeleteNotification = async (id: string) => {
+    if (!confirm('¿Querés borrar esta notificación?')) return
+
+    setIsDeletingNotification(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+
+      showNotification('success', 'Notificación eliminada correctamente.')
+      fetchNotifications()
+    } catch (err) {
+      showNotification('error', err instanceof Error ? err.message : 'Error al eliminar la notificación')
+    } finally {
+      setIsDeletingNotification(false)
     }
   }
 
@@ -273,6 +370,72 @@ export default function AdminClient({
                   {isSendingNotification ? 'Enviando...' : 'Enviar notificación'}
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-md">
+            <div className="h-1 w-full bg-gradient-to-r from-sky-500 to-cyan-500 rounded-t-lg" />
+            <CardHeader className="pt-5">
+              <CardTitle className="flex items-center gap-2 text-lg font-bold">
+                <History className="w-5 h-5 text-sky-600" />
+                Historial de Notificaciones
+              </CardTitle>
+              <CardDescription>Revisá, editá o eliminá notificaciones publicadas.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {notifications.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No hay notificaciones enviadas aún.</p>
+              ) : (
+                <div className="space-y-3">
+                  {notifications.map((note) => (
+                    <div key={note.id} className="rounded-xl border border-border p-4 bg-background">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{note.title}</p>
+                          <p className="mt-1 text-sm text-muted-foreground">Por {note.admin_name || note.admin_email} · {new Date(note.created_at).toLocaleString('es-AR')}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {editingNotificationId === note.id ? (
+                            <>
+                              <Button size="sm" variant="outline" onClick={cancelEditingNotification}>Cancelar</Button>
+                              <Button size="sm" onClick={handleUpdateNotification} disabled={isUpdatingNotification}>
+                                {isUpdatingNotification ? 'Guardando...' : 'Guardar'}
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button size="sm" variant="outline" onClick={() => startEditingNotification(note)}>
+                                <Edit2 className="w-3.5 h-3.5 mr-1" />Editar
+                              </Button>
+                              <Button size="sm" variant="destructive" onClick={() => handleDeleteNotification(note.id)} disabled={isDeletingNotification}>
+                                Borrar
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {editingNotificationId === note.id ? (
+                        <div className="mt-4 space-y-3">
+                          <Input
+                            value={editedNotificationTitle}
+                            onChange={(event) => setEditedNotificationTitle(event.target.value)}
+                            placeholder="Título de la notificación"
+                          />
+                          <textarea
+                            value={editedNotificationMessage}
+                            onChange={(event) => setEditedNotificationMessage(event.target.value)}
+                            className="min-h-[100px] w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            placeholder="Mensaje de la notificación"
+                          />
+                        </div>
+                      ) : (
+                        <p className="mt-4 text-sm text-foreground leading-6">{note.message}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
