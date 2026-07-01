@@ -76,10 +76,13 @@ export default function SignUpPage() {
         const profileResponse = await fetch('/api/auth/create-profile', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          referrer: searchParams.get('referrer') || null,
-          referrer_name: searchParams.get('referrer_name') || null,
-        }),
+          body: JSON.stringify({
+            referrer: searchParams.get('referrer') || null,
+            referrer_name: searchParams.get('referrer_name') || null,
+          }),
+        })
+
+        if (!profileResponse.ok) {
           console.log('[SignUp] Profile creation failed:', profileResponse.status)
           // Don't fail signup if profile creation fails - it might be created by trigger
         } else {
