@@ -21,6 +21,7 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
   const [previousRate, setPreviousRate] = useState<number | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [isRefreshingRate, setIsRefreshingRate] = useState(false)
+  const [currentTipIndex, setCurrentTipIndex] = useState(0)
   const [stats, setStats] = useState({
     totalIncomeARS: 0,
     totalExpenseARS: 0,
@@ -30,6 +31,16 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
     balanceUSD: 0,
     hasUSD: false,
   })
+
+  const financialTips = [
+    'Ahorra al menos el 10% de tus ingresos mensuales y revísalo cada mes.',
+    'Controla tus gastos prioritarios primero: vivienda, alimento y salud.',
+    'Usá presupuestos semanales para no gastar de más en salidas y compras impulsivas.',
+    'Dedica tiempo a comparar precios antes de una compra importante.',
+    'Guarda un fondo de emergencia con al menos 3 meses de gastos fijos.',
+    'Paga primero las deudas con mayores tasas de interés.',
+    'Revisa tus metas financieras cada trimestre y ajusta tu plan.',
+  ]
 
   // Obtener tipo de cambio
   const fetchExchangeRate = async () => {
@@ -73,6 +84,14 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
 
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    const tipInterval = setInterval(() => {
+      setCurrentTipIndex((index) => (index + 1) % financialTips.length)
+    }, 10000)
+
+    return () => clearInterval(tipInterval)
+  }, [financialTips.length])
 
   const fetchStats = async () => {
     try {
@@ -258,69 +277,90 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
           </Card>
         </div>
 
-        {/* Exchange Rate Widget */}
-        {exchangeRate !== null && (
-          <Card className="border-0 shadow-md overflow-hidden mb-8">
-            <div className="h-1 w-full bg-gradient-to-r from-blue-400 to-indigo-500" />
-            <CardHeader className="pb-2 pt-4">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
-                  <DollarSign className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                </div>
-                Tipo de Cambio Oficial
-              </CardTitle>
-              <CardDescription>Último cambio oficial</CardDescription>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                    ${exchangeRate.toFixed(2)}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">ARS por 1 USD</p>
-                  {lastUpdated && (
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Actualizado: {lastUpdated.toLocaleTimeString('es-AR')}
+        {/* Exchange Rate + Tips */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {exchangeRate !== null && (
+            <Card className="border-0 shadow-md overflow-hidden">
+              <div className="h-1 w-full bg-gradient-to-r from-blue-400 to-indigo-500" />
+              <CardHeader className="pb-2 pt-4">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+                    <DollarSign className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  Tipo de Cambio Oficial
+                </CardTitle>
+                <CardDescription>Último cambio oficial</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                      ${exchangeRate.toFixed(2)}
                     </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={fetchExchangeRate}
-                    disabled={isRefreshingRate}
-                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg transition-colors"
-                    title="Actualizar"
-                  >
-                    <RefreshCw
-                      className={`w-5 h-5 text-blue-600 dark:text-blue-400 ${isRefreshingRate ? 'animate-spin' : ''}`}
-                    />
-                  </button>
-                  <div className={`rounded-xl px-4 py-3 ${change !== null ? change >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-950/50 dark:text-slate-300'}`}>
-                    {change !== null ? (
-                      <div className="flex items-center gap-2">
-                        {change >= 0 ? (
-                          <TrendingUp className="w-5 h-5" />
-                        ) : (
-                          <TrendingDown className="w-5 h-5" />
-                        )}
-                        <div>
-                          <p className="text-base font-semibold">
-                            {change >= 0 ? '+' : ''}${Math.abs(change).toFixed(2)}
-                          </p>
-                          <p className="text-sm opacity-90">
-                            {changePercent}% {change >= 0 ? 'subió' : 'bajó'}
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No hay cambio previo registrado</p>
+                    <p className="text-sm text-muted-foreground mt-1">ARS por 1 USD</p>
+                    {lastUpdated && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Actualizado: {lastUpdated.toLocaleTimeString('es-AR')}
+                      </p>
                     )}
                   </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={fetchExchangeRate}
+                      disabled={isRefreshingRate}
+                      className="p-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg transition-colors"
+                      title="Actualizar"
+                    >
+                      <RefreshCw
+                        className={`w-5 h-5 text-blue-600 dark:text-blue-400 ${isRefreshingRate ? 'animate-spin' : ''}`}
+                      />
+                    </button>
+                    <div className={`rounded-xl px-4 py-3 ${change !== null ? change >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-950/50 dark:text-slate-300'}`}>
+                      {change !== null ? (
+                        <div className="flex items-center gap-2">
+                          {change >= 0 ? (
+                            <TrendingUp className="w-5 h-5" />
+                          ) : (
+                            <TrendingDown className="w-5 h-5" />
+                          )}
+                          <div>
+                            <p className="text-base font-semibold">
+                              {change >= 0 ? '+' : ''}${Math.abs(change).toFixed(2)}
+                            </p>
+                            <p className="text-sm opacity-90">
+                              {changePercent}% {change >= 0 ? 'subió' : 'bajó'}
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No hay cambio previo registrado</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card className="border-0 shadow-md overflow-hidden">
+            <div className="h-1 w-full bg-gradient-to-r from-emerald-400 to-green-500" />
+            <CardHeader className="pb-2 pt-4">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                Consejo Financiero
+              </CardTitle>
+              <CardDescription>Tip financiero que cambia automáticamente</CardDescription>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <p className="text-lg font-semibold text-foreground">{financialTips[currentTipIndex]}</p>
+              <p className="text-xs text-muted-foreground mt-3">
+                Consejo actualizado cada 10 segundos para mantener tus finanzas frescas.
+              </p>
             </CardContent>
           </Card>
-        )}
+        </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
