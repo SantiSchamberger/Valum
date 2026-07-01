@@ -503,7 +503,7 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
                     </Button>
                   </Link>
                 )}
-                {profile.role === 'advisor' && (
+                {(profile.role === 'advisor' || profile.role === 'admin') && (
                   <Link href="/dashboard/clients">
                     <Button variant="outline" className="w-full hover:shadow-sm" size="lg">
                       Mis Clientes
