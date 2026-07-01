@@ -17,12 +17,21 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
+      {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="relative w-150 h-40 flex">
-              <img src="/logo.png" alt="Logo de Valum" className="w-full h-full object-contain" />
+          <div className="flex justify-between items-center h-16">
+
+            {/* Contenedor del Logo (Esquina Superior Izquierda) */}
+            <div className="flex items-center">
+              <img
+                src="/logo.png"
+                alt="Logo de Valum"
+                className="h-10 w-auto object-contain"
+              />
             </div>
+
+            {/* Botones de la Derecha */}
             <div className="flex items-center gap-2">
               <Link href="/auth/login" className="cursor-pointer">
                 <Button variant="ghost" size="sm" className="cursor-pointer hover:bg-muted">
@@ -35,6 +44,7 @@ export default async function HomePage() {
                 </Button>
               </Link>
             </div>
+
           </div>
         </div>
       </header>
