@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ArrowLeft, Plus, Trash2, TrendingDown, TrendingUp, DollarSign, Tag, Download, Wallet } from 'lucide-react'
+import { ArrowLeft, Plus, Minus, Trash2, TrendingDown, TrendingUp, DollarSign, Tag, Download, Wallet } from 'lucide-react'
 import { generateCSV, downloadCSV } from '@/lib/download-utils'
 import Link from 'next/link'
 
@@ -195,8 +195,8 @@ export default function TransactionsClient({
     downloadCSV(csv, `transacciones-${new Date().toISOString().split('T')[0]}.csv`)
   }
 
-  const selectedCategoryName = formData.categoryId
-    ? categories.find(c => c.id === formData.categoryId)?.name
+  const selectedCategory = formData.categoryId
+    ? categories.find(c => c.id === formData.categoryId)
     : undefined
 
   return (
@@ -230,8 +230,9 @@ export default function TransactionsClient({
                 onClick={() => setIsAddingNew(!isAddingNew)}
                 className="gap-2 shadow-sm"
                 size="sm"
+                variant={isAddingNew ? 'destructive' : 'default'}
               >
-                <Plus className="w-4 h-4" />
+                {isAddingNew ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                 {isAddingNew ? 'Cancelar' : 'Nueva transacción'}
               </Button>
             </div>
@@ -340,7 +341,15 @@ export default function TransactionsClient({
                     >
                       <SelectTrigger id="category" className="w-full h-10">
                         <SelectValue placeholder="Selecciona una categoría">
-                          {selectedCategoryName}
+                          {selectedCategory ? (
+                            <span className="flex items-center gap-2">
+                              <span
+                                className="w-3 h-3 rounded-full inline-block shrink-0"
+                                style={{ backgroundColor: selectedCategory.color }}
+                              />
+                              {selectedCategory.name}
+                            </span>
+                          ) : 'Selecciona una categoría'}
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
