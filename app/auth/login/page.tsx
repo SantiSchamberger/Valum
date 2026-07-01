@@ -33,24 +33,24 @@ export default function LoginPage() {
         email,
         password,
       })
-      
+
       if (error) {
-        console.log('[v0] Login error:', error.message)
+        console.log('[Valum] Login error:', error.message)
         throw error
       }
-      
+
       if (data?.user) {
-        console.log('[v0] Login successful, user:', data.user.id)
-        
+        console.log('[Valum] Login successful, user:', data.user.id)
+
         // Wait briefly for cookies to write to browser
         await new Promise(resolve => setTimeout(resolve, 300))
-        
-        console.log('[v0] Redirecting to /dashboard')
+
+        console.log('[Valum] Redirecting to /dashboard')
         window.location.href = '/dashboard'
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error al iniciar sesión'
-      console.log('[v0] Login exception:', errorMessage)
+      console.log('[Valum] Login exception:', errorMessage)
       setError(errorMessage)
     } finally {
       setIsLoading(false)
@@ -98,9 +98,9 @@ export default function LoginPage() {
                   {error && (
                     <p className="text-sm text-red-600 font-medium">{error}</p>
                   )}
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
+                  <Button
+                    type="submit"
+                    className="w-full"
                     disabled={isLoading}
                     size="lg"
                   >
