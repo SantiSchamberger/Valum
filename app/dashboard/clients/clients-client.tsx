@@ -112,9 +112,9 @@ export default function ClientsClient({ initialRelations }: ClientsClientProps) 
   }, [supabase])
 
   const handleCopyReferralLink = async (link: string) => {
-    if (!referralLink) return
+    if (!link) return
     try {
-      await navigator.clipboard.writeText(referralLink)
+      await navigator.clipboard.writeText(link)
       setCopyStatus('Copiado!')
     } catch (error) {
       console.error('Error copying referral link:', error)
