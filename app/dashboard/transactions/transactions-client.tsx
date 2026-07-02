@@ -54,13 +54,13 @@ export default function TransactionsClient({
   const [isLoading, setIsLoading] = useState(false)
   const [exchangeRate, setExchangeRate] = useState<number | null>(null)
 
-  // Form state
+  // Form state corregido con soporte explícito para string o null en el ID de la categoría
   const [formData, setFormData] = useState({
     type: 'expense' as 'income' | 'expense',
     amount: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
-    categoryId: '',
+    categoryId: '' as string | null,
     currency: 'ARS',
   })
 
@@ -100,7 +100,7 @@ export default function TransactionsClient({
     }
   }
 
-  // Activa el modo edición precargando los datos
+  // Activa el modo edición precargando los datos de forma segura
   const handleStartEdit = async (transaction: Transaction) => {
     setEditingId(transaction.id)
     setFormData({
@@ -108,7 +108,7 @@ export default function TransactionsClient({
       amount: transaction.amount.toString(),
       description: transaction.description,
       date: transaction.date,
-      categoryId: transaction.category_id || '',
+      categoryId: transaction.category_id || null,
       currency: transaction.currency || 'ARS',
     })
     setIsFormOpen(true)
@@ -386,9 +386,10 @@ export default function TransactionsClient({
                   {/* Categoría */}
                   <div className="grid gap-2 sm:col-span-2">
                     <Label htmlFor="category">Categoría (opcional)</Label>
+                    {/* CORRECCIÓN DE TIPADO DE SHADCN: Manejo seguro para que admita strings o nulos */}
                     <Select
-                      value={formData.categoryId}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value }))}
+                      value={formData.categoryId || ''}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value || null }))}
                     >
                       <SelectTrigger id="category" className="w-full h-10">
                         <SelectValue placeholder="Selecciona una categoría">
@@ -509,7 +510,7 @@ export default function TransactionsClient({
                           )}
                         </div>
 
-                        {/* BOTÓN EDITAR (Icono de lápiz sutil) */}
+                        {/* BOTÓN EDITAR */}
                         <Button
                           variant="ghost"
                           size="sm"
