@@ -37,13 +37,11 @@ export default function SignUpPage() {
     e.preventDefault()
     setError(null)
 
-    // Validate passwords match
     if (password !== confirmPassword) {
       setError('Las contraseñas no coinciden')
       return
     }
 
-    // Validate password length
     if (password.length < 6) {
       setError('La contraseña debe tener al menos 6 caracteres')
       return
@@ -53,7 +51,6 @@ export default function SignUpPage() {
     setIsLoading(true)
 
     try {
-      // Sign up user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -76,10 +73,8 @@ export default function SignUpPage() {
 
       console.log('[SignUp] User created:', authData.user.id)
 
-      // Wait for session to be established
       await new Promise(resolve => setTimeout(resolve, 1000))
 
-      // Create profile via server endpoint
       try {
         const profileResponse = await fetch('/api/auth/create-profile', {
           method: 'POST',
@@ -92,16 +87,13 @@ export default function SignUpPage() {
 
         if (!profileResponse.ok) {
           console.log('[SignUp] Profile creation failed:', profileResponse.status)
-          // Don't fail signup if profile creation fails - it might be created by trigger
         } else {
           console.log('[SignUp] Profile created successfully')
         }
       } catch (profileError) {
         console.log('[SignUp] Profile creation error:', profileError)
-        // Continue anyway
       }
 
-      // Wait before redirect
       await new Promise(resolve => setTimeout(resolve, 500))
 
       console.log('[SignUp] Redirecting to dashboard')
@@ -119,10 +111,22 @@ export default function SignUpPage() {
     <div className="flex min-h-screen w-full items-center justify-center p-6 md:p-10 bg-background">
       <div className="w-full max-w-sm">
         <div className="flex flex-col gap-6">
+
+          {/* Contenedor del Logo Corporativo */}
+          <div className="flex justify-center mb-2">
+            <Link href="/" className="transition-transform duration-200 hover:scale-[1.02]">
+              <img
+                src="/logo.png"
+                alt="Logo de Valum"
+                className="h-12 w-auto object-contain"
+              />
+            </Link>
+          </div>
+
           <Card className="border-2">
             <CardHeader>
-              <CardTitle className="text-3xl font-bold">Crea tu cuenta</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-3xl font-bold tracking-tight">Crea tu cuenta</CardTitle>
+              <CardDescription className="font-light">
                 Únete a Valum y comienza a gestionar tus finanzas
               </CardDescription>
             </CardHeader>
@@ -130,7 +134,7 @@ export default function SignUpPage() {
               <form onSubmit={handleSignUp}>
                 <div className="flex flex-col gap-6">
                   <div className="grid gap-2">
-                    <Label htmlFor="fullName">Nombre completo</Label>
+                    <Label htmlFor="fullName" className="font-medium">Nombre completo</Label>
                     <Input
                       id="fullName"
                       type="text"
@@ -142,7 +146,7 @@ export default function SignUpPage() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="email">Correo electrónico</Label>
+                    <Label htmlFor="email" className="font-medium">Correo electrónico</Label>
                     <Input
                       id="email"
                       type="email"
@@ -154,7 +158,7 @@ export default function SignUpPage() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="password">Contraseña</Label>
+                    <Label htmlFor="password" className="font-medium">Contraseña</Label>
                     <Input
                       id="password"
                       type="password"
@@ -166,7 +170,7 @@ export default function SignUpPage() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
+                    <Label htmlFor="confirmPassword" className="font-medium">Confirmar contraseña</Label>
                     <Input
                       id="confirmPassword"
                       type="password"
@@ -178,18 +182,18 @@ export default function SignUpPage() {
                     />
                   </div>
                   {error && (
-                    <p className="text-sm text-red-600 font-medium">{error}</p>
+                    <p className="text-sm text-destructive font-medium">{error}</p>
                   )}
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
+                  <Button
+                    type="submit"
+                    className="w-full font-medium"
                     disabled={isLoading}
                     size="lg"
                   >
                     {isLoading ? 'Creando cuenta...' : 'Crear cuenta'}
                   </Button>
                 </div>
-                <div className="mt-6 text-center text-sm text-muted-foreground">
+                <div className="mt-6 text-center text-sm text-muted-foreground font-light">
                   ¿Ya tienes cuenta?{' '}
                   <Link
                     href="/auth/login"

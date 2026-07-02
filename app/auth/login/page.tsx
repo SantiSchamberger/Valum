@@ -61,10 +61,22 @@ export default function LoginPage() {
     <div className="flex min-h-screen w-full items-center justify-center p-6 md:p-10 bg-background">
       <div className="w-full max-w-sm">
         <div className="flex flex-col gap-6">
+
+          {/* Contenedor del Logo Corporativo */}
+          <div className="flex justify-center mb-2">
+            <Link href="/" className="transition-transform duration-200 hover:scale-[1.02]">
+              <img
+                src="/logo.png"
+                alt="Logo de Valum"
+                className="h-12 w-auto object-contain"
+              />
+            </Link>
+          </div>
+
           <Card className="border-2">
             <CardHeader>
-              <CardTitle className="text-3xl font-bold">Inicia sesión</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-3xl font-bold tracking-tight">Inicia sesión</CardTitle>
+              <CardDescription className="font-light">
                 Accede a tu plataforma de gestión financiera
               </CardDescription>
             </CardHeader>
@@ -72,7 +84,7 @@ export default function LoginPage() {
               <form onSubmit={handleLogin}>
                 <div className="flex flex-col gap-6">
                   <div className="grid gap-2">
-                    <Label htmlFor="email">Correo electrónico</Label>
+                    <Label htmlFor="email" className="font-medium">Correo electrónico</Label>
                     <Input
                       id="email"
                       type="email"
@@ -84,7 +96,7 @@ export default function LoginPage() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="password">Contraseña</Label>
+                    <Label htmlFor="password" className="font-medium">Contraseña</Label>
                     <Input
                       id="password"
                       type="password"
@@ -96,18 +108,18 @@ export default function LoginPage() {
                     />
                   </div>
                   {error && (
-                    <p className="text-sm text-red-600 font-medium">{error}</p>
+                    <p className="text-sm text-destructive font-medium">{error}</p>
                   )}
                   <Button
                     type="submit"
-                    className="w-full"
+                    className="w-full font-medium"
                     disabled={isLoading}
                     size="lg"
                   >
                     {isLoading ? 'Iniciando sesión...' : 'Inicia sesión'}
                   </Button>
                 </div>
-                <div className="mt-6 text-center text-sm text-muted-foreground">
+                <div className="mt-6 text-center text-sm text-muted-foreground font-light">
                   ¿No tienes cuenta?{' '}
                   <Link
                     href="/auth/sign-up"
