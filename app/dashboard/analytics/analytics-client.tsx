@@ -78,8 +78,8 @@ export default function AnalyticsClient({
 
   const years = useMemo(() => {
     const yearSet = new Set(transactions.map(t => {
-      const date = new Date(t.date)
-      return date.getFullYear().toString()
+      // Usamos split para evitar errores de zona horaria al extraer el año
+      return t.date.split('T')[0].split('-')[0]
     }))
     return Array.from(yearSet).sort((a, b) => Number(b) - Number(a))
   }, [transactions])
@@ -88,12 +88,12 @@ export default function AnalyticsClient({
     const monthSet = new Set(
       filteredTransactions
         .filter(t => {
-          const date = new Date(t.date)
-          return date.getFullYear().toString() === currentYear
+          const yearStr = t.date.split('T')[0].split('-')[0]
+          return yearStr === currentYear
         })
         .map(t => {
-          const date = new Date(t.date)
-          return String(date.getMonth() + 1).padStart(2, '0')
+          const monthStr = t.date.split('T')[0].split('-')[1]
+          return monthStr
         })
     )
     return Array.from(monthSet).sort((a, b) => Number(b) - Number(a))
@@ -101,10 +101,8 @@ export default function AnalyticsClient({
 
   const monthlyAnalytics = useMemo(() => {
     const monthTransactions = filteredTransactions.filter(t => {
-      const date = new Date(t.date)
-      const month = String(date.getMonth() + 1).padStart(2, '0')
-      const year = date.getFullYear().toString()
-      return month === currentMonth && year === currentYear
+      const [yearStr, monthStr] = t.date.split('T')[0].split('-')
+      return monthStr === currentMonth && yearStr === currentYear
     })
 
     const totalIncome = monthTransactions
@@ -137,8 +135,10 @@ export default function AnalyticsClient({
 
     const dailyTrend = monthTransactions
       .reduce((acc: any, t) => {
-        const date = new Date(t.date)
-        const dayKey = date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })
+        // CORRECCIÓN: Parseo de fecha por texto para evitar desfase UTC-3 de Argentina
+        const [yearStr, monthStr, dayStr] = t.date.split('T')[0].split('-')
+        const dayKey = `${dayStr}/${monthStr}`
+
         const existing = acc.find((item: any) => item.date === dayKey)
 
         if (existing) {
@@ -149,14 +149,16 @@ export default function AnalyticsClient({
             date: dayKey,
             income: t.type === 'income' ? t.amount : 0,
             expense: t.type === 'expense' ? t.amount : 0,
+            rawDay: parseInt(dayStr),
+            rawMonth: parseInt(monthStr)
           })
         }
         return acc
       }, [])
       .sort((a: any, b: any) => {
-        const [dayA, monthA] = a.date.split('/')
-        const [dayB, monthB] = b.date.split('/')
-        return new Date(2026, Number(monthA) - 1, Number(dayA)).getTime() - new Date(2026, Number(monthB) - 1, Number(dayB)).getTime()
+        // Ordenamiento numérico seguro sin reconstruir objetos Date erróneos
+        if (a.rawMonth !== b.rawMonth) return a.rawMonth - b.rawMonth
+        return a.rawDay - b.rawDay
       })
 
     return { totalIncome, totalExpense, balance, expensesByCategory, dailyTrend, monthTransactions }
@@ -174,8 +176,11 @@ export default function AnalyticsClient({
     const balance = totalIncome - totalExpense
 
     const transactionsByMonth = filteredTransactions.reduce((acc: any, t) => {
-      const date = new Date(t.date)
-      const monthKey = date.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' })
+      const [yearStr, monthStr, dayStr] = t.date.split('T')[0].split('-')
+      // Creamos una fecha simulada al mediodía para evitar saltos de mes al renderizar nombres cortos
+      const dummyDate = new Date(Number(yearStr), Number(monthStr) - 1, 15)
+      const monthKey = dummyDate.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' })
+
       const existing = acc.find((item: any) => item.month === monthKey)
 
       if (existing) {
@@ -186,14 +191,15 @@ export default function AnalyticsClient({
           month: monthKey,
           income: t.type === 'income' ? t.amount : 0,
           expense: t.type === 'expense' ? t.amount : 0,
+          rawYear: Number(yearStr),
+          rawMonth: Number(monthStr)
         })
       }
       return acc
     }, [])
       .sort((a: any, b: any) => {
-        const dateA = new Date('01 ' + a.month)
-        const dateB = new Date('01 ' + b.month)
-        return dateA.getTime() - dateB.getTime()
+        if (a.rawYear !== b.rawYear) return a.rawYear - b.rawYear
+        return a.rawMonth - b.rawMonth
       })
       .slice(-12)
 
@@ -201,7 +207,7 @@ export default function AnalyticsClient({
   }, [filteredTransactions])
 
   const getMonthName = (monthNum: string) => {
-    const date = new Date(2024, parseInt(monthNum) - 1)
+    const date = new Date(2024, parseInt(monthNum) - 1, 15)
     return date.toLocaleString('es-ES', { month: 'long' })
   }
 
