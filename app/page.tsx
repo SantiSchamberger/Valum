@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { TrendingUp, BarChart3, Users, Shield, Zap, Lock } from 'lucide-react'
 import Link from 'next/link'
 
@@ -32,7 +31,6 @@ export default async function HomePage() {
             {/* Botones de la Derecha */}
             <div className="flex items-center gap-3">
               <Link href="/auth/login" className="cursor-pointer">
-                {/* Cambiado a variant="outline" con borde sutil para que no se camufle */}
                 <Button variant="outline" size="sm" className="cursor-pointer border-border/80 bg-background/50 text-foreground hover:bg-muted font-medium px-4 rounded-md transition-all">
                   Inicia sesión
                 </Button>
@@ -50,21 +48,31 @@ export default async function HomePage() {
 
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="space-y-6 text-center mb-12">
-          <h2 className="text-5xl md:text-6xl font-bold text-foreground leading-tight">
+        <div className="space-y-6 text-center mb-12 flex flex-col items-center">
+
+          {/* Logotipo Vertical de la Marca */}
+          <div className="mb-4">
+            <img
+              src="/logovertical.png"
+              alt="Isologo Valum"
+              className="h-20 md:h-24 w-auto object-contain select-none pointer-events-none"
+            />
+          </div>
+
+          <h2 className="text-5xl md:text-6xl font-bold text-foreground leading-tight max-w-4xl">
             Tu plataforma de <span className="text-violeta-principal">gestión financiera</span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto font-light">
             Controla tus finanzas, analiza tus gastos y recibe asesoramiento profesional en una sola plataforma amigable e intuitiva.
           </p>
-          <div className="flex justify-center gap-4 pt-4">
+          <div className="flex justify-center gap-4 pt-4 w-full">
             <Link href="/auth/sign-up" className="cursor-pointer">
-              <Button size="lg" className="text-lg cursor-pointer hover:opacity-90 transition-opacity shadow-lg">
+              <Button size="lg" className="text-lg cursor-pointer hover:opacity-90 transition-opacity shadow-lg font-medium">
                 Comenzar Gratis
               </Button>
             </Link>
             <Link href="/auth/login" className="cursor-pointer">
-              <Button size="lg" variant="outline" className="text-lg cursor-pointer hover:bg-muted transition-colors">
+              <Button size="lg" variant="outline" className="text-lg cursor-pointer hover:bg-muted transition-colors font-medium">
                 Inicia sesión
               </Button>
             </Link>
@@ -75,10 +83,10 @@ export default async function HomePage() {
       {/* Features Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center mb-16">
-          <h3 className="text-4xl font-bold text-foreground mb-4">
+          <h3 className="text-4xl font-bold text-foreground mb-4 tracking-tight">
             Características principales
           </h3>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-light">
             Todo lo que necesitas para gestionar tus finanzas de forma inteligente
           </p>
         </div>
@@ -94,7 +102,7 @@ export default async function HomePage() {
               <h4 className="text-xl font-bold text-foreground mb-3">
                 Análisis Detallado
               </h4>
-              <p className="text-muted-foreground font-medium leading-relaxed">
+              <p className="text-muted-foreground font-light leading-relaxed">
                 Visualiza tus patrones de gastos con gráficos interactivos y análisis comparativos en tiempo real.
               </p>
             </div>
@@ -109,8 +117,8 @@ export default async function HomePage() {
               <h4 className="text-xl font-bold text-foreground mb-3">
                 Asesoría Profesional
               </h4>
-              <p className="text-muted-foreground font-medium leading-relaxed">
-                Conecta con asesores financieros expertos y obtén recommendations personalizadas para tu situación.
+              <p className="text-muted-foreground font-light leading-relaxed">
+                Conecta con asesores financieros expertos y obtén recomendaciones personalizadas para tu situación.
               </p>
             </div>
           </div>
@@ -124,7 +132,7 @@ export default async function HomePage() {
               <h4 className="text-xl font-bold text-foreground mb-3">
                 Gestión Rápida
               </h4>
-              <p className="text-muted-foreground font-medium leading-relaxed">
+              <p className="text-muted-foreground font-light leading-relaxed">
                 Registra transacciones en segundos con nuestra interfaz intuitiva y amigable.
               </p>
             </div>
@@ -139,7 +147,7 @@ export default async function HomePage() {
               <h4 className="text-xl font-bold text-foreground mb-3">
                 Datos Seguros
               </h4>
-              <p className="text-muted-foreground font-medium leading-relaxed">
+              <p className="text-muted-foreground font-light leading-relaxed">
                 Tu información está protegida con encriptación de nivel empresarial y privacidad garantizada.
               </p>
             </div>
@@ -154,7 +162,7 @@ export default async function HomePage() {
               <h4 className="text-xl font-bold text-foreground mb-3">
                 Metas Financieras
               </h4>
-              <p className="text-muted-foreground font-medium leading-relaxed">
+              <p className="text-muted-foreground font-light leading-relaxed">
                 Define presupuestos y metas claras para mejorar continuamente tu situación financiera.
               </p>
             </div>
@@ -169,7 +177,7 @@ export default async function HomePage() {
               <h4 className="text-xl font-bold text-foreground mb-3">
                 Notificaciones
               </h4>
-              <p className="text-muted-foreground font-medium leading-relaxed">
+              <p className="text-muted-foreground font-light leading-relaxed">
                 Recibe alertas personalizadas en tiempo real sobre movimientos importantes en tu cuenta.
               </p>
             </div>
@@ -180,14 +188,14 @@ export default async function HomePage() {
       {/* CTA Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="rounded-2xl bg-gradient-to-r from-violeta-principal to-violeta-claro p-12 md:p-16 text-center text-white shadow-2xl">
-          <h3 className="text-4xl font-bold mb-4">
+          <h3 className="text-4xl font-bold mb-4 tracking-tight">
             ¿Listo para mejorar tus finanzas?
           </h3>
-          <p className="text-white/90 max-w-2xl mx-auto mb-10 text-lg">
+          <p className="text-white/90 max-w-2xl mx-auto mb-10 text-lg font-light">
             Únete a miles de usuarios que ya están transformando su relación con el dinero. Sin verificación de email, acceso inmediato.
           </p>
           <Link href="/auth/sign-up" className="cursor-pointer inline-block">
-            <Button size="lg" className="text-lg bg-white text-violeta-principal hover:bg-white/90 cursor-pointer transition-all shadow-lg">
+            <Button size="lg" className="text-lg bg-white text-violeta-principal hover:bg-white/90 cursor-pointer transition-all shadow-lg font-medium">
               Crear Cuenta Gratuita
             </Button>
           </Link>
@@ -198,17 +206,17 @@ export default async function HomePage() {
       <footer className="border-t border-border bg-card mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex justify-between items-center">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground font-light">
               © 2026 Valum. Todos los derechos reservados.
             </p>
             <div className="flex gap-6">
-              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
+              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors font-light">
                 Privacidad
               </Link>
-              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
+              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors font-light">
                 Términos
               </Link>
-              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
+              <Link href="#" className="text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors font-light">
                 Contacto
               </Link>
             </div>
