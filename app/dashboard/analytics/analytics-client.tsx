@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, BarChart3 } from 'lucide-react'
+import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, BarChart3, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 import {
   PieChart,
@@ -64,13 +64,20 @@ export default function AnalyticsClient({
   // Estado de privacidad heredado del Dashboard
   const [hideBalances, setHideBalances] = useState(false)
 
-  // Cargar preferencia de privacidad sincronizada
+  // Cargar preferencia de privacidad sincronizada al iniciar
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedPrivacy = localStorage.getItem('valumHideBalances') === 'true'
       setHideBalances(storedPrivacy)
     }
   }, [])
+
+  // Función para alternar la privacidad y persistirla sincrónicamente con el Dashboard
+  const togglePrivacy = () => {
+    const nextState = !hideBalances
+    setHideBalances(nextState)
+    localStorage.setItem('valumHideBalances', String(nextState))
+  }
 
   const handleSelectedYearChange = (value: string | null) => {
     setSelectedYear(value ?? '')
@@ -249,7 +256,7 @@ export default function AnalyticsClient({
     return `${currSymbol}${formattedNumber}`
   }
 
-  // Formateador local exclusivo para las tarjetas superiores de análisis que soporta la censura
+  // Formateador local que oculta los valores numéricos si la privacidad está activa
   const fmtHeaderCard = (v: number) => {
     if (hideBalances) {
       return `${currSymbol} ••••••`
@@ -294,28 +301,43 @@ export default function AnalyticsClient({
                 <h1 className="text-xl font-bold text-foreground tracking-tight">Análisis Financiero</h1>
               </div>
             </div>
-            {hasUSD && (
-              <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-                <button
-                  onClick={() => setSelectedCurrency('ARS')}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${selectedCurrency === 'ARS'
-                      ? 'bg-card text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                >
-                  Pesos ($)
-                </button>
-                <button
-                  onClick={() => setSelectedCurrency('USD')}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${selectedCurrency === 'USD'
-                      ? 'bg-card text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                >
-                  Dólares (US$)
-                </button>
-              </div>
-            )}
+
+            {/* Contenedor de acciones del Header */}
+            <div className="flex items-center gap-3">
+              {/* BOTÓN DEL OJITO (Control de Privacidad Local en Analytics) */}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={togglePrivacy}
+                className="rounded-lg w-9 h-9 border-border bg-card shadow-sm text-muted-foreground hover:text-foreground transition-all"
+                title={hideBalances ? "Mostrar saldos" : "Ocultar saldos"}
+              >
+                {hideBalances ? <EyeOff className="w-4 h-4 text-violeta-principal" /> : <Eye className="w-4 h-4" />}
+              </Button>
+
+              {hasUSD && (
+                <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+                  <button
+                    onClick={() => setSelectedCurrency('ARS')}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${selectedCurrency === 'ARS'
+                        ? 'bg-card text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                  >
+                    Pesos ($)
+                  </button>
+                  <button
+                    onClick={() => setSelectedCurrency('USD')}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${selectedCurrency === 'USD'
+                        ? 'bg-card text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                  >
+                    Dólares (US$)
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -378,7 +400,7 @@ export default function AnalyticsClient({
               </CardContent>
             </Card>
 
-            {/* Summary Cards con Censura Sincronizada */}
+            {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
               <Card className="border-0 shadow-md overflow-hidden">
                 <div className="h-1 bg-emerald-500" />
