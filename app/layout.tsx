@@ -1,15 +1,15 @@
 import { Analytics } from '@vercel/analytics/next'
-import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Poppins } from 'next/font/google' // Importamos Poppins
 import './globals.css'
 
-const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+// Configuramos las variantes aprobadas de Poppins
+const poppins = Poppins({
+  variable: '--font-poppins',
   subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'], // Light, Regular, Medium, Semibold, Bold
 })
 
-export const metadata: Metadata = {
+export const metadata = {
   title: 'Valum - Tu Plataforma Financiera',
   description: 'Gestiona tus finanzas personales con análisis avanzado y asesoría profesional en una sola plataforma',
   icons: {
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   },
 }
 
-export const viewport: Viewport = {
+export const viewport = {
   colorScheme: 'light dark',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: 'white' },
@@ -35,13 +35,10 @@ export const viewport: Viewport = {
   ],
 }
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+export default function RootLayout({ children }) {
   return (
-    <html lang="es" className={`${geistSans.variable} ${geistMono.variable} bg-background`}>
+    // Inyectamos la variable de Poppins en el HTML
+    <html lang="es" className={`${poppins.variable} bg-background`}>
       <body className="font-sans antialiased">
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}

@@ -72,7 +72,6 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
     }
   }
 
-  // Obtener tipo de cambio
   const fetchExchangeRate = async () => {
     try {
       setIsRefreshingRate(true)
@@ -108,7 +107,6 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
     fetchExchangeRate()
     fetchNotifications()
 
-    // Actualizar tipo de cambio cada 5 minutos
     const interval = setInterval(() => {
       fetchExchangeRate()
     }, 5 * 60 * 1000)
@@ -147,7 +145,7 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
     try {
       const today = new Date()
       const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
-      
+
       const { data: transactions } = await supabase
         .from('transactions')
         .select('*')
@@ -210,12 +208,9 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
   const changePercent = change !== null && previousRate !== null
     ? ((change / previousRate) * 100).toFixed(2)
     : null
-  const changeDirection = change !== null ? (change >= 0 ? 'up' : 'down') : null
 
   const formatAmount = (amount: number, currency: 'ARS' | 'USD' = 'ARS') => {
-    return currency === 'USD'
-      ? `US$${amount.toFixed(2)}`
-      : `$${amount.toFixed(2)}`
+    return currency === 'USD' ? `US$${amount.toFixed(2)}` : `$${amount.toFixed(2)}`
   }
 
   return (
@@ -225,23 +220,24 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-md">
+              {/* Cambiado degradado genérico por los tonos violetas corporativos */}
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violeta-principal to-violeta-claro flex items-center justify-center shadow-md">
                 <Wallet className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-xl text-foreground">Valum</h1>
-                <p className="text-xs text-muted-foreground">Gestión Financiera</p>
+                <h1 className="font-bold text-xl text-foreground tracking-tight">Valum</h1>
+                <p className="text-xs text-muted-foreground font-light">Gestión Financiera</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right hidden sm:block">
                 <p className="font-medium text-sm text-foreground">{profile.full_name || user.email}</p>
-                <p className="text-xs text-muted-foreground capitalize">
+                <p className="text-xs text-muted-foreground capitalize font-light">
                   {profile.role === 'advisor' ? 'Asesor Financiero' : profile.role === 'admin' ? 'Administrador' : 'Cliente'}
                 </p>
               </div>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
                 onClick={handleLogout}
                 disabled={isLoading}
@@ -258,10 +254,10 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-foreground mb-2">
+          <h2 className="text-3xl font-bold text-foreground tracking-tight mb-2">
             Bienvenido, {profile.full_name?.split(' ')[0] || 'Usuario'}
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground font-light">
             Aquí podés gestionar tus finanzas de forma simple e intuitiva
           </p>
         </div>
@@ -270,7 +266,7 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Income Card */}
           <Card className="border-0 shadow-md overflow-hidden">
-            <div className="h-1 w-full bg-gradient-to-r from-emerald-400 to-green-500" />
+            <div className="h-1 w-full bg-emerald-500" />
             <CardHeader className="pb-2 pt-4">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
@@ -280,21 +276,21 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
               </CardTitle>
             </CardHeader>
             <CardContent className="pb-4">
-              <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+              <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight">
                 {formatAmount(stats.totalIncomeARS)}
               </p>
               {stats.hasUSD && stats.totalIncomeUSD > 0 && (
-                <p className="text-sm font-semibold text-emerald-500 mt-0.5">
+                <p className="text-sm font-medium text-emerald-500 mt-0.5">
                   + {formatAmount(stats.totalIncomeUSD, 'USD')}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground mt-2">Mes actual en pesos</p>
+              <p className="text-xs text-muted-foreground font-light mt-2">Mes actual en pesos</p>
             </CardContent>
           </Card>
 
           {/* Expense Card */}
           <Card className="border-0 shadow-md overflow-hidden">
-            <div className="h-1 w-full bg-gradient-to-r from-rose-400 to-red-500" />
+            <div className="h-1 w-full bg-rose-500" />
             <CardHeader className="pb-2 pt-4">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center">
@@ -304,39 +300,40 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
               </CardTitle>
             </CardHeader>
             <CardContent className="pb-4">
-              <p className="text-3xl font-bold text-rose-600 dark:text-rose-400">
+              <p className="text-3xl font-bold text-rose-600 dark:text-rose-400 tracking-tight">
                 {formatAmount(stats.totalExpenseARS)}
               </p>
               {stats.hasUSD && stats.totalExpenseUSD > 0 && (
-                <p className="text-sm font-semibold text-rose-500 mt-0.5">
+                <p className="text-sm font-medium text-rose-500 mt-0.5">
                   + {formatAmount(stats.totalExpenseUSD, 'USD')}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground mt-2">Mes actual en pesos</p>
+              <p className="text-xs text-muted-foreground font-light mt-2">Mes actual en pesos</p>
             </CardContent>
           </Card>
 
           {/* Balance Card */}
           <Card className="border-0 shadow-md overflow-hidden">
-            <div className={`h-1 w-full bg-gradient-to-r ${stats.balanceARS >= 0 ? 'from-blue-400 to-indigo-500' : 'from-orange-400 to-red-500'}`} />
+            {/* Cambiado degradado índigo por Violeta Corporativo */}
+            <div className={`h-1 w-full ${stats.balanceARS >= 0 ? 'bg-violeta-principal' : 'bg-orange-500'}`} />
             <CardHeader className="pb-2 pt-4">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
-                  <Wallet className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${stats.balanceARS >= 0 ? 'bg-violeta-principal/10' : 'bg-orange-100 dark:bg-orange-900/40'}`}>
+                  <Wallet className={`w-4 h-4 ${stats.balanceARS >= 0 ? 'text-violeta-principal' : 'text-orange-600 dark:text-orange-400'}`} />
                 </div>
                 Balance
               </CardTitle>
             </CardHeader>
             <CardContent className="pb-4">
-              <p className={`text-3xl font-bold ${stats.balanceARS >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'}`}>
+              <p className={`text-3xl font-bold tracking-tight ${stats.balanceARS >= 0 ? 'text-violeta-principal' : 'text-orange-600 dark:text-orange-400'}`}>
                 {formatAmount(stats.balanceARS)}
               </p>
               {stats.hasUSD && (
-                <p className={`text-sm font-semibold mt-0.5 ${stats.balanceUSD >= 0 ? 'text-blue-500' : 'text-orange-500'}`}>
+                <p className={`text-sm font-medium mt-0.5 ${stats.balanceUSD >= 0 ? 'text-violeta-claro' : 'text-orange-500'}`}>
                   {formatAmount(stats.balanceUSD, 'USD')}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground mt-2">
+              <p className="text-xs text-muted-foreground font-light mt-2">
                 {stats.balanceARS >= 0 ? 'Presupuesto positivo' : 'Presupuesto negativo'}
               </p>
             </CardContent>
@@ -347,25 +344,25 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {exchangeRate !== null && (
             <Card className="border-0 shadow-md overflow-hidden">
-              <div className="h-1 w-full bg-gradient-to-r from-blue-400 to-indigo-500" />
+              <div className="h-1 w-full bg-violeta-principal" />
               <CardHeader className="pb-2 pt-4">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
-                    <DollarSign className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <div className="w-8 h-8 rounded-full bg-violeta-principal/10 flex items-center justify-center">
+                    <DollarSign className="w-4 h-4 text-violeta-principal" />
                   </div>
                   Tipo de Cambio Oficial
                 </CardTitle>
-                <CardDescription>Último cambio oficial</CardDescription>
+                <CardDescription className="font-light">Último cambio oficial</CardDescription>
               </CardHeader>
               <CardContent className="pb-4">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                    <p className="text-3xl font-bold text-violeta-principal tracking-tight">
                       ${exchangeRate.toFixed(2)}
                     </p>
-                    <p className="text-sm text-muted-foreground mt-1">ARS por 1 USD</p>
+                    <p className="text-sm text-muted-foreground mt-1 font-light">ARS por 1 USD</p>
                     {lastUpdated && (
-                      <p className="text-xs text-muted-foreground mt-2">
+                      <p className="text-xs text-muted-foreground font-light mt-2">
                         Actualizado: {lastUpdated.toLocaleTimeString('es-AR')}
                       </p>
                     )}
@@ -374,32 +371,28 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
                     <button
                       onClick={fetchExchangeRate}
                       disabled={isRefreshingRate}
-                      className="p-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg transition-colors"
+                      className="p-2 hover:bg-muted rounded-lg transition-colors"
                       title="Actualizar"
                     >
                       <RefreshCw
-                        className={`w-5 h-5 text-blue-600 dark:text-blue-400 ${isRefreshingRate ? 'animate-spin' : ''}`}
+                        className={`w-5 h-5 text-violeta-principal ${isRefreshingRate ? 'animate-spin' : ''}`}
                       />
                     </button>
-                    <div className={`rounded-xl px-4 py-3 ${change !== null ? change >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-950/50 dark:text-slate-300'}`}>
+                    <div className={`rounded-xl px-4 py-3 ${change !== null ? change >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300' : 'bg-muted text-muted-foreground'}`}>
                       {change !== null ? (
                         <div className="flex items-center gap-2">
-                          {change >= 0 ? (
-                            <TrendingUp className="w-5 h-5" />
-                          ) : (
-                            <TrendingDown className="w-5 h-5" />
-                          )}
+                          {change >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
                           <div>
                             <p className="text-base font-semibold">
                               {change >= 0 ? '+' : ''}${Math.abs(change).toFixed(2)}
                             </p>
-                            <p className="text-sm opacity-90">
+                            <p className="text-sm opacity-90 font-light">
                               {changePercent}% {change >= 0 ? 'subió' : 'bajó'}
                             </p>
                           </div>
                         </div>
                       ) : (
-                        <p className="text-sm text-muted-foreground">No hay cambio previo registrado</p>
+                        <p className="text-sm text-muted-foreground font-light">Sin registro previo</p>
                       )}
                     </div>
                   </div>
@@ -409,46 +402,46 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
           )}
 
           <Card className="border-0 shadow-md overflow-hidden">
-            <div className="h-1 w-full bg-gradient-to-r from-emerald-400 to-green-500" />
+            <div className="h-1 w-full bg-violeta-claro" />
             <CardHeader className="pb-2 pt-4">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
-                  <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <div className="w-8 h-8 rounded-full bg-violeta-claro/10 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-violeta-claro" />
                 </div>
                 Consejo Financiero
               </CardTitle>
-              <CardDescription>Tip financiero que cambia automáticamente</CardDescription>
+              <CardDescription className="font-light">Tip financiero rotativo</CardDescription>
             </CardHeader>
             <CardContent className="pb-4">
-              <p className="text-lg font-semibold text-foreground">{financialTips[currentTipIndex]}</p>
+              <p className="text-base font-medium text-foreground leading-relaxed">{financialTips[currentTipIndex]}</p>
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-md overflow-hidden">
-            <div className="h-1 w-full bg-gradient-to-r from-cyan-400 to-sky-500" />
+            <div className="h-1 w-full bg-azul-profundo dark:bg-violeta-principal" />
             <CardHeader className="pb-2 pt-4">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-cyan-100 dark:bg-cyan-900/40 flex items-center justify-center">
-                  <DollarSign className="w-4 h-4 text-cyan-600 dark:text-cyan-300" />
+                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                  <DollarSign className="w-4 h-4 text-foreground/70" />
                 </div>
                 Mensajes de Administrador
               </CardTitle>
-              <CardDescription>Últimos avisos enviados desde administración</CardDescription>
+              <CardDescription className="font-light">Últimos avisos desde administración</CardDescription>
             </CardHeader>
             <CardContent className="pb-4 space-y-4">
               {notifications.length > 0 ? (
                 notifications.map((note) => (
                   <div key={note.id} className="rounded-xl border border-border bg-card/80 p-4">
-                    <p className="font-semibold text-foreground">{note.title}</p>
-                    <p className="text-sm text-muted-foreground mt-1">{note.message}</p>
-                    <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                    <p className="font-semibold text-foreground tracking-tight">{note.title}</p>
+                    <p className="text-sm text-muted-foreground font-light mt-1">{note.message}</p>
+                    <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground font-light">
                       <span>{new Date(note.created_at).toLocaleDateString('es-AR')}</span>
                       <span>Por {note.admin_name || note.admin_email}</span>
                     </div>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-muted-foreground">No hay mensajes recientes.</p>
+                <p className="text-sm text-muted-foreground font-light">No hay mensajes recientes.</p>
               )}
             </CardContent>
           </Card>
@@ -456,40 +449,39 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Quick Actions Card */}
           <Card className="border-0 shadow-md">
             <CardHeader>
-              <CardTitle className="text-lg font-bold">Acciones Rápidas</CardTitle>
-              <CardDescription>Gestioná tus transacciones y datos</CardDescription>
+              <CardTitle className="text-lg font-bold tracking-tight">Acciones Rápidas</CardTitle>
+              <CardDescription className="font-light">Gestioná tus transacciones y datos</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-3">
                 <Link href="/dashboard/transactions">
-                  <Button className="w-full shadow-sm hover:shadow-md" size="lg">
+                  <Button className="w-full shadow-sm hover:shadow-md font-medium" size="lg">
                     <Plus className="w-4 h-4 mr-2" />
                     Agregar Transacción
                   </Button>
                 </Link>
                 <Link href="/dashboard/categories">
-                  <Button variant="outline" className="w-full hover:shadow-sm" size="lg">
+                  <Button variant="outline" className="w-full hover:shadow-sm font-medium" size="lg">
                     Gestionar Categorías
                   </Button>
                 </Link>
                 <Link href="/dashboard/analytics">
-                  <Button variant="outline" className="w-full hover:shadow-sm" size="lg">
+                  <Button variant="outline" className="w-full hover:shadow-sm font-medium" size="lg">
                     <BarChart3 className="w-4 h-4 mr-2" />
                     Ver Análisis
                   </Button>
                 </Link>
                 <Link href="/dashboard/exchange-rates">
-                  <Button variant="outline" className="w-full hover:shadow-sm" size="lg">
+                  <Button variant="outline" className="w-full hover:shadow-sm font-medium" size="lg">
                     <DollarSign className="w-4 h-4 mr-2" />
                     Tipo de Cambio
                   </Button>
                 </Link>
                 {profile.role === 'client' && (
                   <Link href="/dashboard/advisors">
-                    <Button variant="outline" className="w-full hover:shadow-sm" size="lg">
+                    <Button variant="outline" className="w-full hover:shadow-sm font-medium" size="lg">
                       <Users className="w-4 h-4 mr-2" />
                       Mi Asesor Financiero
                     </Button>
@@ -497,7 +489,8 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
                 )}
                 {(profile.role === 'advisor' || profile.role === 'admin') && (
                   <Link href="/dashboard/advisors">
-                    <Button variant="outline" className="w-full border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-900/30 hover:shadow-sm" size="lg">
+                    {/* Ajustado borde y hover a los tonos corporativos */}
+                    <Button variant="outline" className="w-full border-violeta-claro/40 text-violeta-principal hover:bg-violeta-principal/5 dark:text-violeta-claro dark:hover:bg-violeta-principal/10 font-medium" size="lg">
                       <Users className="w-4 h-4 mr-2" />
                       Asesores Financieros
                     </Button>
@@ -505,14 +498,14 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
                 )}
                 {(profile.role === 'advisor' || profile.role === 'admin') && (
                   <Link href="/dashboard/clients">
-                    <Button variant="outline" className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-amber-800 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/30 hover:shadow-sm" size="lg">
+                    <Button variant="outline" className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-amber-800 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-900/30 font-medium" size="lg">
                       Mis Clientes
                     </Button>
                   </Link>
                 )}
                 {profile.role === 'admin' && (
                   <Link href="/dashboard/admin">
-                    <Button variant="outline" className="w-full border-purple-300 text-purple-700 hover:bg-purple-50 hover:text-purple-800 dark:border-purple-700 dark:text-purple-400 dark:hover:bg-purple-900/30 hover:shadow-sm" size="lg">
+                    <Button variant="outline" className="w-full border-violeta-principal/30 text-violeta-principal hover:bg-violeta-principal/5 dark:border-violeta-principal/50 dark:text-violeta-claro font-medium" size="lg">
                       Panel de Administración
                     </Button>
                   </Link>
@@ -524,27 +517,27 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
           {/* Info Card */}
           <Card className="border-0 shadow-md">
             <CardHeader>
-              <CardTitle className="text-lg font-bold">Información</CardTitle>
-              <CardDescription>Tu cuenta y configuración</CardDescription>
+              <CardTitle className="text-lg font-bold tracking-tight">Información</CardTitle>
+              <CardDescription className="font-light">Tu cuenta y configuración</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4 text-sm">
                 <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground mb-0.5">Correo electrónico</p>
+                  <p className="text-xs text-muted-foreground font-light mb-0.5">Correo electrónico</p>
                   <p className="font-medium text-foreground">{user.email}</p>
                 </div>
                 <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground mb-0.5">Nombre</p>
+                  <p className="text-xs text-muted-foreground font-light mb-0.5">Nombre</p>
                   <p className="font-medium text-foreground">{profile.full_name || 'No configurado'}</p>
                 </div>
                 <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground mb-0.5">Tipo de cuenta</p>
+                  <p className="text-xs text-muted-foreground font-light mb-0.5">Tipo de cuenta</p>
                   <p className="font-medium text-foreground capitalize">
                     {profile.role === 'advisor' ? 'Asesor Financiero' : profile.role === 'admin' ? 'Administrador' : 'Cliente'}
                   </p>
                 </div>
                 <Link href="/dashboard/settings">
-                  <Button variant="outline" className="w-full mt-2 hover:shadow-sm">
+                  <Button variant="outline" className="w-full mt-2 hover:shadow-sm font-medium">
                     Editar Perfil
                   </Button>
                 </Link>
