@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ArrowLeft, Plus, Minus, Trash2, TrendingDown, TrendingUp, DollarSign, Wallet, Download } from 'lucide-react'
+import { ArrowLeft, Plus, Minus, Trash2, Edit2, TrendingDown, TrendingUp, Wallet, Download } from 'lucide-react'
 import { generateCSV, downloadCSV } from '@/lib/download-utils'
 import Link from 'next/link'
 
@@ -49,7 +49,8 @@ export default function TransactionsClient({
   const router = useRouter()
   const supabase = createClient()
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions)
-  const [isAddingNew, setIsAddingNew] = useState(false)
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [exchangeRate, setExchangeRate] = useState<number | null>(null)
 
@@ -64,26 +65,28 @@ export default function TransactionsClient({
   })
 
   // Obtener el tipo de cambio cuando se selecciona USD
-  const handleCurrencyChange = async (currency: string | null) => {
+  const handleCurrencyChange = async (currency: string | null, targetDate = formData.date) => {
     if (!currency) return
 
-    setFormData({ ...formData, currency })
+    setFormData(prev => ({ ...prev, currency }))
 
     if (currency === 'USD') {
       try {
-        const response = await fetch(`/api/get-exchange-rate?date=${formData.date}`)
+        const response = await fetch(`/api/get-exchange-rate?date=${targetDate}`)
         const data = await response.json()
         setExchangeRate(data.rate)
       } catch (error) {
         console.error('Error fetching exchange rate:', error)
         setExchangeRate(null)
       }
+    } else {
+      setExchangeRate(null)
     }
   }
 
   // Obtener tipo de cambio cuando cambia la fecha
   const handleDateChange = async (date: string) => {
-    setFormData({ ...formData, date })
+    setFormData(prev => ({ ...prev, date }))
 
     if (formData.currency === 'USD') {
       try {
@@ -97,7 +100,41 @@ export default function TransactionsClient({
     }
   }
 
-  const handleAddTransaction = async (e: React.FormEvent) => {
+  // Activa el modo edición precargando los datos
+  const handleStartEdit = async (transaction: Transaction) => {
+    setEditingId(transaction.id)
+    setFormData({
+      type: transaction.type,
+      amount: transaction.amount.toString(),
+      description: transaction.description,
+      date: transaction.date,
+      categoryId: transaction.category_id || '',
+      currency: transaction.currency || 'ARS',
+    })
+    setIsFormOpen(true)
+
+    if (transaction.currency === 'USD') {
+      await handleCurrencyChange('USD', transaction.date)
+    } else {
+      setExchangeRate(null)
+    }
+  }
+
+  const handleCancelForm = () => {
+    setIsFormOpen(false)
+    setEditingId(null)
+    setFormData({
+      type: 'expense',
+      amount: '',
+      description: '',
+      date: new Date().toISOString().split('T')[0],
+      categoryId: '',
+      currency: 'ARS',
+    })
+    setExchangeRate(null)
+  }
+
+  const handleSaveTransaction = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
@@ -107,36 +144,45 @@ export default function TransactionsClient({
         return
       }
 
-      const { data, error } = await supabase
-        .from('transactions')
-        .insert({
-          user_id: user.id,
-          type: formData.type,
-          amount: parseFloat(formData.amount),
-          description: formData.description,
-          date: formData.date,
-          category_id: formData.categoryId || null,
-          currency: formData.currency,
-          exchange_rate: formData.currency === 'USD' ? exchangeRate : null,
-        })
-        .select()
+      const transactionData = {
+        user_id: user.id,
+        type: formData.type,
+        amount: parseFloat(formData.amount),
+        description: formData.description,
+        date: formData.date,
+        category_id: formData.categoryId || null,
+        currency: formData.currency,
+        exchange_rate: formData.currency === 'USD' ? exchangeRate : null,
+      }
 
-      if (error) throw error
+      if (editingId) {
+        // MODO EDICIÓN (UPDATE)
+        const { data, error } = await supabase
+          .from('transactions')
+          .update(transactionData)
+          .eq('id', editingId)
+          .eq('user_id', user.id)
+          .select()
 
-      setTransactions([data[0], ...transactions])
-      setFormData({
-        type: 'expense',
-        amount: '',
-        description: '',
-        date: new Date().toISOString().split('T')[0],
-        categoryId: '',
-        currency: 'ARS',
-      })
-      setExchangeRate(null)
-      setIsAddingNew(false)
+        if (error) throw error
+
+        setTransactions(transactions.map(t => t.id === editingId ? data[0] : t))
+      } else {
+        // MODO CREACIÓN (INSERT)
+        const { data, error } = await supabase
+          .from('transactions')
+          .insert(transactionData)
+          .select()
+
+        if (error) throw error
+
+        setTransactions([data[0], ...transactions])
+      }
+
+      handleCancelForm()
     } catch (error) {
-      console.error('Error adding transaction:', error)
-      alert('Error al agregar transacción')
+      console.error('Error saving transaction:', error)
+      alert('Error al guardar la transacción')
     } finally {
       setIsLoading(false)
     }
@@ -155,6 +201,7 @@ export default function TransactionsClient({
       if (error) throw error
 
       setTransactions(transactions.filter(t => t.id !== transactionId))
+      if (editingId === transactionId) handleCancelForm()
     } catch (error) {
       console.error('Error deleting transaction:', error)
       alert('Error al eliminar transacción')
@@ -167,7 +214,6 @@ export default function TransactionsClient({
     return category || null
   }
 
-  // FUNCIÓN FORMATEADORA OPTIMIZADA CON EL ESTÁNDAR LOCAL DE ARGENTINA (es-AR)
   const formatAmount = (amount: number, currency: string) => {
     const formattedNumber = new Intl.NumberFormat('es-AR', {
       minimumFractionDigits: 2,
@@ -230,13 +276,13 @@ export default function TransactionsClient({
                 </Button>
               )}
               <Button
-                onClick={() => setIsAddingNew(!isAddingNew)}
+                onClick={() => isFormOpen ? handleCancelForm() : setIsFormOpen(true)}
                 className="gap-2 shadow-sm font-medium"
                 size="sm"
-                variant={isAddingNew ? 'destructive' : 'default'}
+                variant={isFormOpen ? 'destructive' : 'default'}
               >
-                {isAddingNew ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                {isAddingNew ? 'Cancelar' : 'Nueva transacción'}
+                {isFormOpen ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                {isFormOpen ? 'Cancelar' : 'Nueva transacción'}
               </Button>
             </div>
           </div>
@@ -245,17 +291,19 @@ export default function TransactionsClient({
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {isAddingNew && (
+        {isFormOpen && (
           <Card className="border-0 shadow-lg mb-8">
             <div className="h-1 w-full bg-violeta-principal rounded-t-lg" />
             <CardHeader className="pt-5">
-              <CardTitle className="text-lg font-bold tracking-tight">Agregar Nueva Transacción</CardTitle>
+              <CardTitle className="text-lg font-bold tracking-tight">
+                {editingId ? 'Editar Transacción' : 'Agregar Nueva Transacción'}
+              </CardTitle>
               <CardDescription className="font-light">
-                Registrá un ingreso o gasto
+                {editingId ? 'Modificá los detalles del movimiento' : 'Registrá un ingreso o gasto'}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleAddTransaction} className="space-y-6">
+              <form onSubmit={handleSaveTransaction} className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Tipo */}
                   <div className="grid gap-2">
@@ -264,7 +312,7 @@ export default function TransactionsClient({
                       value={formData.type}
                       onValueChange={(value) => {
                         if (value === 'income' || value === 'expense') {
-                          setFormData({ ...formData, type: value })
+                          setFormData(prev => ({ ...prev, type: value }))
                         }
                       }}
                     >
@@ -285,7 +333,7 @@ export default function TransactionsClient({
                     <Label htmlFor="currency">Moneda</Label>
                     <Select
                       value={formData.currency}
-                      onValueChange={handleCurrencyChange}
+                      onValueChange={(val) => handleCurrencyChange(val)}
                     >
                       <SelectTrigger id="currency" className="w-full h-10">
                         <SelectValue>
@@ -316,7 +364,7 @@ export default function TransactionsClient({
                       min="0"
                       placeholder="0,00"
                       value={formData.amount}
-                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                      onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
                       required
                       className="h-10"
                     />
@@ -340,7 +388,7 @@ export default function TransactionsClient({
                     <Label htmlFor="category">Categoría (opcional)</Label>
                     <Select
                       value={formData.categoryId}
-                      onValueChange={(value) => value && setFormData({ ...formData, categoryId: value })}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, categoryId: value }))}
                     >
                       <SelectTrigger id="category" className="w-full h-10">
                         <SelectValue placeholder="Selecciona una categoría">
@@ -379,14 +427,14 @@ export default function TransactionsClient({
                     id="description"
                     placeholder="Ej: Salario mensual, Compra de supermercado..."
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     required
                     className="h-10"
                   />
                 </div>
 
                 <Button type="submit" className="w-full shadow-sm font-medium" disabled={isLoading} size="lg">
-                  {isLoading ? 'Guardando...' : 'Guardar Transacción'}
+                  {isLoading ? 'Guardando...' : editingId ? 'Actualizar Transacción' : 'Guardar Transacción'}
                 </Button>
               </form>
             </CardContent>
@@ -403,7 +451,7 @@ export default function TransactionsClient({
                 </div>
                 <p className="text-muted-foreground mb-2 font-medium">No hay transacciones registradas</p>
                 <p className="text-sm text-muted-foreground font-light mb-6">Empezá registrando tu primer ingreso o gasto</p>
-                <Button onClick={() => setIsAddingNew(true)} className="shadow-sm font-medium">
+                <Button onClick={() => setIsFormOpen(true)} className="shadow-sm font-medium">
                   Agregar tu primera transacción
                 </Button>
               </CardContent>
@@ -446,8 +494,8 @@ export default function TransactionsClient({
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <div className="text-right">
+                      <div className="flex items-center gap-1 shrink-0">
+                        <div className="text-right mr-2">
                           <p className={`font-bold text-base tracking-tight ${transaction.type === 'income'
                               ? 'text-emerald-600 dark:text-emerald-400'
                               : 'text-rose-600 dark:text-rose-400'
@@ -460,11 +508,25 @@ export default function TransactionsClient({
                             </span>
                           )}
                         </div>
+
+                        {/* BOTÓN EDITAR (Icono de lápiz sutil) */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleStartEdit(transaction)}
+                          className="text-muted-foreground hover:text-violeta-principal hover:bg-violeta-principal/10"
+                          title="Editar"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+
+                        {/* BOTÓN ELIMINAR */}
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDeleteTransaction(transaction.id)}
                           className="text-muted-foreground hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30"
+                          title="Eliminar"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
