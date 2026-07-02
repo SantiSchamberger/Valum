@@ -45,6 +45,14 @@ interface AnalyticsClientProps {
   categories: Category[]
 }
 
+// Helper seguro para convertir cualquier fecha de la base de datos a un objeto Date forzado en la zona horaria de Argentina
+const getArgentinaDate = (dateString: string): Date => {
+  const date = new Date(dateString)
+  // Convertimos usando el string regionalizado de Argentina para normalizar variaciones de servidores (Vercel UTC)
+  const tzString = date.toLocaleString('en-US', { timeZone: 'America/Buenos_Aires' })
+  return new Date(tzString)
+}
+
 export default function AnalyticsClient({
   user,
   transactions,
@@ -62,9 +70,10 @@ export default function AnalyticsClient({
     setSelectedMonth(value ?? '')
   }
 
-  const now = new Date()
-  const defaultMonth = String(now.getMonth() + 1).padStart(2, '0')
-  const defaultYear = String(now.getFullYear())
+  // Inicializar selectores basados estrictamente en la fecha actual de Argentina
+  const nowInArg = getArgentinaDate(new Date().toISOString())
+  const defaultMonth = String(nowInArg.getMonth() + 1).padStart(2, '0')
+  const defaultYear = String(nowInArg.getFullYear())
 
   const currentMonth = selectedMonth || defaultMonth
   const currentYear = selectedYear || defaultYear
@@ -78,8 +87,8 @@ export default function AnalyticsClient({
 
   const years = useMemo(() => {
     const yearSet = new Set(transactions.map(t => {
-      // Usamos split para evitar errores de zona horaria al extraer el año
-      return t.date.split('T')[0].split('-')[0]
+      const argDate = getArgentinaDate(t.date)
+      return argDate.getFullYear().toString()
     }))
     return Array.from(yearSet).sort((a, b) => Number(b) - Number(a))
   }, [transactions])
@@ -88,12 +97,12 @@ export default function AnalyticsClient({
     const monthSet = new Set(
       filteredTransactions
         .filter(t => {
-          const yearStr = t.date.split('T')[0].split('-')[0]
-          return yearStr === currentYear
+          const argDate = getArgentinaDate(t.date)
+          return argDate.getFullYear().toString() === currentYear
         })
         .map(t => {
-          const monthStr = t.date.split('T')[0].split('-')[1]
-          return monthStr
+          const argDate = getArgentinaDate(t.date)
+          return String(argDate.getMonth() + 1).padStart(2, '0')
         })
     )
     return Array.from(monthSet).sort((a, b) => Number(b) - Number(a))
@@ -101,7 +110,9 @@ export default function AnalyticsClient({
 
   const monthlyAnalytics = useMemo(() => {
     const monthTransactions = filteredTransactions.filter(t => {
-      const [yearStr, monthStr] = t.date.split('T')[0].split('-')
+      const argDate = getArgentinaDate(t.date)
+      const monthStr = String(argDate.getMonth() + 1).padStart(2, '0')
+      const yearStr = argDate.getFullYear().toString()
       return monthStr === currentMonth && yearStr === currentYear
     })
 
@@ -135,8 +146,9 @@ export default function AnalyticsClient({
 
     const dailyTrend = monthTransactions
       .reduce((acc: any, t) => {
-        // CORRECCIÓN: Parseo de fecha por texto para evitar desfase UTC-3 de Argentina
-        const [yearStr, monthStr, dayStr] = t.date.split('T')[0].split('-')
+        const argDate = getArgentinaDate(t.date)
+        const dayStr = String(argDate.getDate()).padStart(2, '0')
+        const monthStr = String(argDate.getMonth() + 1).padStart(2, '0')
         const dayKey = `${dayStr}/${monthStr}`
 
         const existing = acc.find((item: any) => item.date === dayKey)
@@ -149,14 +161,13 @@ export default function AnalyticsClient({
             date: dayKey,
             income: t.type === 'income' ? t.amount : 0,
             expense: t.type === 'expense' ? t.amount : 0,
-            rawDay: parseInt(dayStr),
-            rawMonth: parseInt(monthStr)
+            rawDay: argDate.getDate(),
+            rawMonth: argDate.getMonth() + 1
           })
         }
         return acc
       }, [])
       .sort((a: any, b: any) => {
-        // Ordenamiento numérico seguro sin reconstruir objetos Date erróneos
         if (a.rawMonth !== b.rawMonth) return a.rawMonth - b.rawMonth
         return a.rawDay - b.rawDay
       })
@@ -176,10 +187,8 @@ export default function AnalyticsClient({
     const balance = totalIncome - totalExpense
 
     const transactionsByMonth = filteredTransactions.reduce((acc: any, t) => {
-      const [yearStr, monthStr, dayStr] = t.date.split('T')[0].split('-')
-      // Creamos una fecha simulada al mediodía para evitar saltos de mes al renderizar nombres cortos
-      const dummyDate = new Date(Number(yearStr), Number(monthStr) - 1, 15)
-      const monthKey = dummyDate.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' })
+      const argDate = getArgentinaDate(t.date)
+      const monthKey = argDate.toLocaleDateString('es-AR', { month: 'short', year: '2-digit', timeZone: 'America/Buenos_Aires' })
 
       const existing = acc.find((item: any) => item.month === monthKey)
 
@@ -191,8 +200,8 @@ export default function AnalyticsClient({
           month: monthKey,
           income: t.type === 'income' ? t.amount : 0,
           expense: t.type === 'expense' ? t.amount : 0,
-          rawYear: Number(yearStr),
-          rawMonth: Number(monthStr)
+          rawYear: argDate.getFullYear(),
+          rawMonth: argDate.getMonth() + 1
         })
       }
       return acc
@@ -207,8 +216,8 @@ export default function AnalyticsClient({
   }, [filteredTransactions])
 
   const getMonthName = (monthNum: string) => {
-    const date = new Date(2024, parseInt(monthNum) - 1, 15)
-    return date.toLocaleString('es-ES', { month: 'long' })
+    const date = new Date(2026, parseInt(monthNum) - 1, 15)
+    return date.toLocaleString('es-AR', { month: 'long' })
   }
 
   const currSymbol = selectedCurrency === 'USD' ? 'US$' : '$'
@@ -499,7 +508,7 @@ export default function AnalyticsClient({
                 <div className="h-1 bg-azul-profundo dark:bg-violeta-principal rounded-t-lg" />
                 <CardHeader className="pt-5">
                   <CardTitle className="text-base font-bold tracking-tight">Tendencia Diaria — {getMonthName(currentMonth)} {currentYear}</CardTitle>
-                  <CardDescription className="font-light">Movimientos de cuenta con volumen de comportamiento acumulado</CardDescription>
+                  <CardDescription className="font-light">Movimientos de cuenta regionalizados bajo zona horaria Argentina</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={360}>
