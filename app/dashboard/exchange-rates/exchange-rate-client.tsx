@@ -32,11 +32,11 @@ export default function ExchangeRateClient({ exchangeRates }: ExchangeRateClient
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [currentRate, setCurrentRate] = useState<number | null>(null)
 
-  // Obtener la tasa actual
+  // Obtener la tasa actual al montar el componente
   useEffect(() => {
     fetchCurrentRate()
-    
-    // Actualizar cada 5 minutos
+
+    // Actualizar cada 5 minutos de forma automática
     const interval = setInterval(fetchCurrentRate, 5 * 60 * 1000)
     return () => clearInterval(interval)
   }, [])
@@ -44,9 +44,29 @@ export default function ExchangeRateClient({ exchangeRates }: ExchangeRateClient
   const fetchCurrentRate = async () => {
     try {
       setIsRefreshing(true)
-      const response = await fetch('/api/get-exchange-rate')
+
+      // Agregamos el timestamp para romper el caché de Next.js/Vercel
+      const response = await fetch(`/api/get-exchange-rate?t=${new Date().getTime()}`)
       const data = await response.json()
-      setCurrentRate(data.rate)
+
+      if (data && data.rate) {
+        setCurrentRate(data.rate)
+
+        // ACTUALIZACIÓN REACTIVA: Si el día de hoy no está en el histórico, o cambió de valor, lo actualizamos en la gráfica
+        setRates(prevRates => {
+          const exists = prevRates.some(r => r.date === data.date)
+          if (exists) {
+            return prevRates.map(r => r.date === data.date ? { ...r, rate: data.rate } : r)
+          } else {
+            return [...prevRates, {
+              id: data.id || Math.random().toString(),
+              date: data.date,
+              rate: data.rate,
+              source: data.source
+            }]
+          }
+        })
+      }
     } catch (error) {
       console.error('Error fetching current rate:', error)
     } finally {
@@ -54,20 +74,33 @@ export default function ExchangeRateClient({ exchangeRates }: ExchangeRateClient
     }
   }
 
-  const sortedRates = [...rates].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  // Ordenamos cronológicamente por texto YYYY-MM-DD puro de forma segura
+  const sortedRates = useMemo(() => {
+    return [...rates].sort((a, b) => a.date.localeCompare(b.date))
+  }, [rates])
 
-  const chartData = sortedRates.map(r => ({
-    date: new Date(r.date).toLocaleDateString('es-AR', { month: 'short', day: 'numeric' }),
-    rate: r.rate,
-    fullDate: r.date,
-  }))
+  const chartData = useMemo(() => {
+    return sortedRates.map(r => {
+      // Parseo seguro cortando strings para evitar deformaciones UTC en Recharts
+      const [year, month, day] = r.date.split('-')
+      return {
+        date: `${day}/${month}`, // Formato limpio "DD/MM" para el eje X
+        rate: r.rate,
+        fullDate: r.date,
+      }
+    })
+  }, [sortedRates])
 
   const minRate = sortedRates.length > 0 ? Math.min(...sortedRates.map(r => r.rate)) : null
   const maxRate = sortedRates.length > 0 ? Math.max(...sortedRates.map(r => r.rate)) : null
-  const avgRate = sortedRates.length > 0 ? sortedRates.reduce((sum, r) => sum + r.rate, 0) / sortedRates.length : null
 
-  const today = new Date().toISOString().split('T')[0]
+  // Cálculo corregido de la fecha de hoy en Argentina
+  const argDateStr = new Date().toLocaleString('en-US', { timeZone: 'America/Buenos_Aires' })
+  const argDate = new Date(argDateStr)
+  const today = `${argDate.getFullYear()}-${String(argDate.getMonth() + 1).padStart(2, '0')}-${String(argDate.getDate()).padStart(2, '0')}`
+
   const latestRate = sortedRates.length > 0 ? sortedRates[sortedRates.length - 1] : null
+
   const previousRate: number | null = (() => {
     if (!latestRate) return null
     if (sortedRates.length === 1) {
@@ -79,6 +112,7 @@ export default function ExchangeRateClient({ exchangeRates }: ExchangeRateClient
   })()
 
   const change: number | null = currentRate !== null && previousRate !== null ? currentRate - previousRate : null
+
   const changePercent: string | null = change !== null && previousRate !== null
     ? ((change / previousRate) * 100).toFixed(2)
     : null
@@ -91,16 +125,16 @@ export default function ExchangeRateClient({ exchangeRates }: ExchangeRateClient
           <div className="flex flex-wrap justify-between items-center gap-3 py-4 sm:h-16 sm:py-0">
             <div className="flex items-center gap-3">
               <Link href="/dashboard">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="font-medium">
                   <ArrowLeft className="w-4 h-4 mr-1.5" />
                   Volver
                 </Button>
               </Link>
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-sm">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violeta-principal to-violeta-claro flex items-center justify-center shadow-sm">
                   <DollarSign className="w-4 h-4 text-white" />
                 </div>
-                <h1 className="text-xl font-bold text-foreground">Tipo de Cambio USD/ARS</h1>
+                <h1 className="text-xl font-bold text-foreground tracking-tight">Tipo de Cambio USD/ARS</h1>
               </div>
             </div>
             <button
@@ -110,7 +144,7 @@ export default function ExchangeRateClient({ exchangeRates }: ExchangeRateClient
               title="Actualizar"
             >
               <RefreshCw
-                className={`w-5 h-5 text-blue-600 dark:text-blue-400 ${isRefreshing ? 'animate-spin' : ''}`}
+                className={`w-5 h-5 text-violeta-principal ${isRefreshing ? 'animate-spin' : ''}`}
               />
             </button>
           </div>
@@ -123,53 +157,53 @@ export default function ExchangeRateClient({ exchangeRates }: ExchangeRateClient
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           {/* Current Rate */}
           <Card className="border-0 shadow-md overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-blue-400 to-indigo-500" />
+            <div className="h-1 bg-violeta-principal" />
             <CardContent className="pt-5 pb-5">
               <p className="text-xs text-muted-foreground font-medium mb-2">Tasa Actual</p>
               {currentRate !== null ? (
-                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                <p className="text-3xl font-bold text-violeta-principal tracking-tight">
                   ${currentRate.toFixed(2)}
                 </p>
               ) : (
-                <p className="text-3xl font-bold text-muted-foreground">Cargando...</p>
+                <p className="text-3xl font-bold text-muted-foreground tracking-tight">Cargando...</p>
               )}
-              <p className="text-xs text-muted-foreground mt-2">Por 1 USD</p>
+              <p className="text-xs text-muted-foreground font-light mt-2">Por 1 USD</p>
             </CardContent>
           </Card>
 
           {/* Min Rate */}
           <Card className="border-0 shadow-md overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-emerald-400 to-green-500" />
+            <div className="h-1 bg-emerald-500" />
             <CardContent className="pt-5 pb-5">
               <p className="text-xs text-muted-foreground font-medium mb-2">Mínimo</p>
-              <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+              <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight">
                 {minRate !== null ? `$${minRate.toFixed(2)}` : 'Sin datos'}
               </p>
-              <p className="text-xs text-muted-foreground mt-2">Últimos 30 días</p>
+              <p className="text-xs text-muted-foreground font-light mt-2">Últimos 30 días</p>
             </CardContent>
           </Card>
 
           {/* Max Rate */}
           <Card className="border-0 shadow-md overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-rose-400 to-red-500" />
+            <div className="h-1 bg-rose-500" />
             <CardContent className="pt-5 pb-5">
               <p className="text-xs text-muted-foreground font-medium mb-2">Máximo</p>
-              <p className="text-3xl font-bold text-rose-600 dark:text-rose-400">
+              <p className="text-3xl font-bold text-rose-600 dark:text-rose-400 tracking-tight">
                 {maxRate !== null ? `$${maxRate.toFixed(2)}` : 'Sin datos'}
               </p>
-              <p className="text-xs text-muted-foreground mt-2">Últimos 30 días</p>
+              <p className="text-xs text-muted-foreground font-light mt-2">Últimos 30 días</p>
             </CardContent>
           </Card>
 
           {/* Change */}
           <Card className="border-0 shadow-md overflow-hidden">
-            <div className={`h-1 ${change === null ? 'bg-slate-200 dark:bg-slate-800' : change >= 0 ? 'bg-gradient-to-r from-rose-400 to-red-500' : 'bg-gradient-to-r from-emerald-400 to-green-500'}`} />
+            <div className={`h-1 ${change === null ? 'bg-border' : change >= 0 ? 'bg-rose-500' : 'bg-emerald-500'}`} />
             <CardContent className="pt-5 pb-5">
               <p className="text-xs text-muted-foreground font-medium mb-2">Diferencia vs anterior</p>
               {change !== null ? (
                 <>
                   <div className="flex items-center gap-2">
-                    <p className={`text-3xl font-bold ${change >= 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                    <p className={`text-3xl font-bold tracking-tight ${change >= 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                       {change >= 0 ? '+' : ''}{change.toFixed(2)}
                     </p>
                     {change !== 0 ? (
@@ -180,12 +214,12 @@ export default function ExchangeRateClient({ exchangeRates }: ExchangeRateClient
                       )
                     ) : null}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-xs text-muted-foreground font-light mt-2">
                     {changePercent ? `${changePercent}% respecto al anterior` : 'No hay datos anteriores'}
                   </p>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">No hay dato anterior para comparar</p>
+                <p className="text-sm text-muted-foreground font-light">No hay dato anterior para comparar</p>
               )}
             </CardContent>
           </Card>
@@ -194,30 +228,31 @@ export default function ExchangeRateClient({ exchangeRates }: ExchangeRateClient
         {/* Chart */}
         {rates.length > 0 && (
           <Card className="border-0 shadow-md">
-            <div className="h-1 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-t-lg" />
+            <div className="h-1 bg-violeta-principal rounded-t-lg" />
             <CardHeader className="pt-5">
-              <CardTitle className="text-lg font-bold">Evolución del Tipo de Cambio</CardTitle>
-              <CardDescription>Últimos 30 días - USD a ARS</CardDescription>
+              <CardTitle className="text-lg font-bold tracking-tight">Evolución del Tipo de Cambio</CardTitle>
+              <CardDescription className="font-light">Últimos 30 días - USD a ARS</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={360}>
                 <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-10" />
-                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-5" vertical={false} />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'currentColor' }} tickLine={false} axisLine={false} dy={8} />
+                  <YAxis tick={{ fontSize: 11, fill: 'currentColor' }} tickLine={false} axisLine={false} dx={-8} />
                   <Tooltip
+                    contentStyle={{ borderRadius: '12px', background: 'var(--card)', borderColor: 'var(--border)' }}
                     formatter={(value) => `$${Number(value).toFixed(2)}`}
                     labelFormatter={(label) => `Fecha: ${label}`}
                   />
-                  <Legend />
+                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '13px' }} />
                   <Line
                     type="monotone"
                     dataKey="rate"
-                    stroke="#3b82f6"
+                    stroke="#6C3BFF"
                     name="Tipo de Cambio (ARS)"
-                    strokeWidth={2.5}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
+                    strokeWidth={3}
+                    dot={{ r: 4, strokeWidth: 0, fill: '#6C3BFF' }}
+                    activeDot={{ r: 6, strokeWidth: 0, fill: '#6C3BFF' }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -225,40 +260,53 @@ export default function ExchangeRateClient({ exchangeRates }: ExchangeRateClient
           </Card>
         )}
 
-        {/* Histórico de cambios */}
-        {rates.length > 1 && (
+        {/* Histórico de cambios ordenado de más nuevo a más viejo */}
+        {sortedRates.length > 1 && (
           <Card className="border-0 shadow-md mt-8">
-            <div className="h-1 bg-gradient-to-r from-cyan-400 to-sky-500 rounded-t-lg" />
+            <div className="h-1 bg-violeta-claro rounded-t-lg" />
             <CardHeader className="pt-5">
-              <CardTitle className="text-lg font-bold">Histórico de cambios</CardTitle>
-              <CardDescription>Comparación diaria del tipo de cambio USD/ARS</CardDescription>
+              <CardTitle className="text-lg font-bold tracking-tight">Histórico de Cambios</CardTitle>
+              <CardDescription className="font-light">Comparación diaria del tipo de cambio USD/ARS</CardDescription>
             </CardHeader>
-            <CardContent className="divide-y divide-border/50">
-              {rates.map((rate, index) => {
-                if (index === 0) return null
+            <CardContent className="divide-y divide-border/50 max-h-[400px] overflow-y-auto pr-2">
+              {[...sortedRates].reverse().map((rate, index, array) => {
+                // Al estar invertido, el anterior en el tiempo es el siguiente elemento del mapa (index + 1)
+                if (index === array.length - 1) {
+                  return (
+                    <div key={rate.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-4">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{rate.date.split('-').reverse().join('/')}</p>
+                        <p className="text-xs text-muted-foreground font-light">Precio Base: ${rate.rate.toFixed(2)}</p>
+                      </div>
+                      <span className="text-xs text-muted-foreground font-light italic">Punto de partida del registro</span>
+                    </div>
+                  )
+                }
 
-                const previousRate = rates[index - 1]
-                const delta = rate.rate - previousRate.rate
-                const deltaPercent = previousRate.rate > 0 ? ((delta / previousRate.rate) * 100).toFixed(2) : '0.00'
+                const previousInTime = array[index + 1]
+                const delta = rate.rate - previousInTime.rate
+                const deltaPercent = previousInTime.rate > 0 ? ((delta / previousInTime.rate) * 100).toFixed(2) : '0.00'
                 const isUp = delta > 0
 
                 return (
                   <div key={rate.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-4">
                     <div>
-                      <p className="text-sm font-semibold text-foreground">{new Date(rate.date).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
-                      <p className="text-xs text-muted-foreground">Precio: ${rate.rate.toFixed(2)}</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {rate.date.split('-').reverse().join('/')}
+                      </p>
+                      <p className="text-xs text-muted-foreground font-light">Precio: ${rate.rate.toFixed(2)}</p>
                     </div>
 
                     <div className="flex items-center gap-2 text-sm sm:text-base font-semibold">
                       {isUp ? (
-                        <TrendingUp className="w-5 h-5 text-emerald-600" />
+                        <TrendingUp className="w-5 h-5 text-rose-600 dark:text-rose-400" />
                       ) : (
-                        <TrendingDown className="w-5 h-5 text-rose-600" />
+                        <TrendingDown className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                       )}
-                      <span className={isUp ? 'text-emerald-600' : 'text-rose-600'}>
+                      <span className={isUp ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}>
                         {delta >= 0 ? '+' : ''}${Math.abs(delta).toFixed(2)}
                       </span>
-                      <span className="text-muted-foreground">({deltaPercent}%){isUp ? ' ↑' : ' ↓'}</span>
+                      <span className="text-xs text-muted-foreground font-light">({deltaPercent}%){isUp ? ' ↑' : ' ↓'}</span>
                     </div>
                   </div>
                 )
@@ -270,13 +318,13 @@ export default function ExchangeRateClient({ exchangeRates }: ExchangeRateClient
         {/* Info Card */}
         <Card className="border-0 shadow-md mt-8">
           <CardHeader>
-            <CardTitle className="text-base font-bold">Información</CardTitle>
+            <CardTitle className="text-base font-bold tracking-tight">Información de Sistema</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground space-y-2">
-            <p>• El tipo de cambio se actualiza automáticamente cada 5 minutos</p>
-            <p>• Los datos se obtienen de APIs públicas de tipo de cambio</p>
-            <p>• Se almacenan históricos para análisis comparativos</p>
-            <p>• Se usa la tasa del día al registrar transacciones en USD</p>
+          <CardContent className="text-sm text-muted-foreground space-y-2 font-light">
+            <p>• El tipo de cambio se sincroniza automáticamente cada 5 minutos.</p>
+            <p>• Los datos se extraen de pizarras financieras nacionales minuto a minuto.</p>
+            <p>• Se almacenan históricos para análisis comparativos y auditorías de patrimonio.</p>
+            <p>• Se usa la tasa del día al registrar transacciones en USD de forma nativa.</p>
           </CardContent>
         </Card>
       </main>
