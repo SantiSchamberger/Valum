@@ -1,11 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
+// FORZAR A NEXT.JS A ANULAR EL CACHÉ DE ESTA API EN PRODUCCIÓN
+export const dynamic = 'force-dynamic'
+
 // Función para obtener el tipo de cambio de una API pública
 async function fetchExternalRate() {
   try {
-    // Intentar con Open Exchange Rates API (requiere clave - fallaría sin ella)
-    // Alternativa: usar una API pública gratuita
     const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD', {
       cache: 'no-store'
     })
@@ -34,29 +35,38 @@ async function fetchExternalRate() {
     console.error('Error fetching from fallback API:', error)
   }
 
-  // Si falla, retornar null para usar la BD
   return null
 }
 
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
-    const date = request.nextUrl.searchParams.get('date')
-    
-    const today = date || new Date().toISOString().split('T')[0]
+    const dateParam = request.nextUrl.searchParams.get('date')
+
+    let today = dateParam
+
+    // CORRECCIÓN DE ZONA HORARIA: Si no envían date, calculamos el día actual real en Argentina (no la UTC del servidor)
+    if (!today) {
+      const argDateStr = new Date().toLocaleString('en-US', { timeZone: 'America/Buenos_Aires' })
+      const argDate = new Date(argDateStr)
+      const yyyy = argDate.getFullYear()
+      const mm = String(argDate.getMonth() + 1).padStart(2, '0')
+      const dd = String(argDate.getDate()).padStart(2, '0')
+      today = `${yyyy}-${mm}-${dd}`
+    }
 
     // Primero intentar obtener una tasa externa actualizada
     const externalRate = await fetchExternalRate()
-    
+
     if (externalRate) {
-      // Si obtuvimos una tasa externa, guardarla en la BD para este día
+      // Si obtuvimos una tasa externa, guardarla en la BD para este día si no existe
       const { data: existingRate } = await supabase
         .from('exchange_rates')
         .select('*')
         .eq('date', today)
         .eq('currency_from', 'USD')
         .eq('currency_to', 'ARS')
-        .single()
+        .maybeSingle() // Usamos maybeSingle para evitar excepciones molestas si no encuentra fila
 
       if (!existingRate) {
         // Guardar la nueva tasa
@@ -87,7 +97,7 @@ export async function GET(request: NextRequest) {
       .eq('date', today)
       .eq('currency_from', 'USD')
       .eq('currency_to', 'ARS')
-      .single()
+      .maybeSingle()
 
     if (existingRate) {
       return NextResponse.json(existingRate)
@@ -104,7 +114,7 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error in get-exchange-rate:', error)
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Internal server error',
       rate: 1000,
       source: 'default'
@@ -121,7 +131,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing date or rate' }, { status: 400 })
     }
 
-    // Guardar el tipo de cambio
     const { data, error } = await supabase
       .from('exchange_rates')
       .insert({
