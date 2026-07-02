@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ArrowLeft, Plus, Minus, Trash2, TrendingDown, TrendingUp, DollarSign, Tag, Download, Wallet } from 'lucide-react'
+import { ArrowLeft, Plus, Minus, Trash2, TrendingDown, TrendingUp, DollarSign, Wallet, Download } from 'lucide-react'
 import { generateCSV, downloadCSV } from '@/lib/download-utils'
 import Link from 'next/link'
 
@@ -41,10 +41,10 @@ interface TransactionsClientProps {
   initialTransactions: Transaction[]
 }
 
-export default function TransactionsClient({ 
-  user, 
-  categories, 
-  initialTransactions 
+export default function TransactionsClient({
+  user,
+  categories,
+  initialTransactions
 }: TransactionsClientProps) {
   const router = useRouter()
   const supabase = createClient()
@@ -52,7 +52,7 @@ export default function TransactionsClient({
   const [isAddingNew, setIsAddingNew] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [exchangeRate, setExchangeRate] = useState<number | null>(null)
-  
+
   // Form state
   const [formData, setFormData] = useState({
     type: 'expense' as 'income' | 'expense',
@@ -67,8 +67,8 @@ export default function TransactionsClient({
   const handleCurrencyChange = async (currency: string | null) => {
     if (!currency) return
 
-    setFormData({...formData, currency})
-    
+    setFormData({ ...formData, currency })
+
     if (currency === 'USD') {
       try {
         const response = await fetch(`/api/get-exchange-rate?date=${formData.date}`)
@@ -83,8 +83,8 @@ export default function TransactionsClient({
 
   // Obtener tipo de cambio cuando cambia la fecha
   const handleDateChange = async (date: string) => {
-    setFormData({...formData, date})
-    
+    setFormData({ ...formData, date })
+
     if (formData.currency === 'USD') {
       try {
         const response = await fetch(`/api/get-exchange-rate?date=${date}`)
@@ -167,17 +167,20 @@ export default function TransactionsClient({
     return category || null
   }
 
+  // FUNCIÓN FORMATEADORA OPTIMIZADA CON EL ESTÁNDAR LOCAL DE ARGENTINA (es-AR)
   const formatAmount = (amount: number, currency: string) => {
-    return currency === 'USD'
-      ? `US$${amount.toFixed(2)}`
-      : `$${amount.toFixed(2)}`
+    const formattedNumber = new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount)
+
+    return currency === 'USD' ? `US$${formattedNumber}` : `$${formattedNumber}`
   }
 
   const handleDownloadCSV = () => {
-    // Calculate totals
     let totalIncome = 0
     let totalExpense = 0
-    
+
     transactions.forEach(tx => {
       if (tx.type === 'income') {
         totalIncome += tx.amount
@@ -207,18 +210,18 @@ export default function TransactionsClient({
           <div className="flex flex-wrap justify-between items-center gap-3 py-4 sm:h-16 sm:py-0">
             <div className="flex items-center gap-3">
               <Link href="/dashboard">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="font-medium">
                   <ArrowLeft className="w-4 h-4 mr-1.5" />
                   Volver
                 </Button>
               </Link>
-              <h1 className="text-xl font-bold text-foreground">Mis Transacciones</h1>
+              <h1 className="text-xl font-bold text-foreground tracking-tight">Mis Transacciones</h1>
             </div>
             <div className="flex gap-2">
               {transactions.length > 0 && (
-                <Button 
+                <Button
                   onClick={handleDownloadCSV}
-                  className="gap-2 shadow-sm"
+                  className="gap-2 shadow-sm font-medium"
                   size="sm"
                   variant="outline"
                 >
@@ -226,9 +229,9 @@ export default function TransactionsClient({
                   Descargar CSV
                 </Button>
               )}
-              <Button 
+              <Button
                 onClick={() => setIsAddingNew(!isAddingNew)}
-                className="gap-2 shadow-sm"
+                className="gap-2 shadow-sm font-medium"
                 size="sm"
                 variant={isAddingNew ? 'destructive' : 'default'}
               >
@@ -244,10 +247,10 @@ export default function TransactionsClient({
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isAddingNew && (
           <Card className="border-0 shadow-lg mb-8">
-            <div className="h-1 w-full bg-gradient-to-r from-primary to-secondary rounded-t-lg" />
+            <div className="h-1 w-full bg-violeta-principal rounded-t-lg" />
             <CardHeader className="pt-5">
-              <CardTitle className="text-lg font-bold">Agregar Nueva Transacción</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg font-bold tracking-tight">Agregar Nueva Transacción</CardTitle>
+              <CardDescription className="font-light">
                 Registrá un ingreso o gasto
               </CardDescription>
             </CardHeader>
@@ -257,11 +260,11 @@ export default function TransactionsClient({
                   {/* Tipo */}
                   <div className="grid gap-2">
                     <Label htmlFor="type">Tipo</Label>
-                    <Select 
-                      value={formData.type} 
+                    <Select
+                      value={formData.type}
                       onValueChange={(value) => {
                         if (value === 'income' || value === 'expense') {
-                          setFormData({...formData, type: value})
+                          setFormData({ ...formData, type: value })
                         }
                       }}
                     >
@@ -280,8 +283,8 @@ export default function TransactionsClient({
                   {/* Moneda */}
                   <div className="grid gap-2">
                     <Label htmlFor="currency">Moneda</Label>
-                    <Select 
-                      value={formData.currency} 
+                    <Select
+                      value={formData.currency}
                       onValueChange={handleCurrencyChange}
                     >
                       <SelectTrigger id="currency" className="w-full h-10">
@@ -295,8 +298,8 @@ export default function TransactionsClient({
                       </SelectContent>
                     </Select>
                     {formData.currency === 'USD' && exchangeRate && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Tasa: $1 USD = ${exchangeRate.toFixed(2)} ARS
+                      <p className="text-xs text-muted-foreground mt-1 font-light">
+                        Tasa: $1 USD = {formatAmount(exchangeRate, 'ARS')}
                       </p>
                     )}
                   </div>
@@ -311,9 +314,9 @@ export default function TransactionsClient({
                       type="number"
                       step="0.01"
                       min="0"
-                      placeholder="0.00"
+                      placeholder="0,00"
                       value={formData.amount}
-                      onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                       required
                       className="h-10"
                     />
@@ -335,9 +338,9 @@ export default function TransactionsClient({
                   {/* Categoría */}
                   <div className="grid gap-2 sm:col-span-2">
                     <Label htmlFor="category">Categoría (opcional)</Label>
-                    <Select 
-                      value={formData.categoryId} 
-                      onValueChange={(value) => value && setFormData({...formData, categoryId: value})}
+                    <Select
+                      value={formData.categoryId}
+                      onValueChange={(value) => value && setFormData({ ...formData, categoryId: value })}
                     >
                       <SelectTrigger id="category" className="w-full h-10">
                         <SelectValue placeholder="Selecciona una categoría">
@@ -376,13 +379,13 @@ export default function TransactionsClient({
                     id="description"
                     placeholder="Ej: Salario mensual, Compra de supermercado..."
                     value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     required
                     className="h-10"
                   />
                 </div>
 
-                <Button type="submit" className="w-full shadow-sm" disabled={isLoading} size="lg">
+                <Button type="submit" className="w-full shadow-sm font-medium" disabled={isLoading} size="lg">
                   {isLoading ? 'Guardando...' : 'Guardar Transacción'}
                 </Button>
               </form>
@@ -399,8 +402,8 @@ export default function TransactionsClient({
                   <Wallet className="w-8 h-8 text-muted-foreground" />
                 </div>
                 <p className="text-muted-foreground mb-2 font-medium">No hay transacciones registradas</p>
-                <p className="text-sm text-muted-foreground mb-6">Empezá registrando tu primer ingreso o gasto</p>
-                <Button onClick={() => setIsAddingNew(true)} className="shadow-sm">
+                <p className="text-sm text-muted-foreground font-light mb-6">Empezá registrando tu primer ingreso o gasto</p>
+                <Button onClick={() => setIsAddingNew(true)} className="shadow-sm font-medium">
                   Agregar tu primera transacción
                 </Button>
               </CardContent>
@@ -414,11 +417,10 @@ export default function TransactionsClient({
                   <CardContent className="py-4 px-5">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                          transaction.type === 'income' 
-                            ? 'bg-emerald-100 dark:bg-emerald-900/30' 
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${transaction.type === 'income'
+                            ? 'bg-emerald-100 dark:bg-emerald-900/30'
                             : 'bg-rose-100 dark:bg-rose-900/30'
-                        }`}>
+                          }`}>
                           {transaction.type === 'income' ? (
                             <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                           ) : (
@@ -437,20 +439,19 @@ export default function TransactionsClient({
                                 {cat.name}
                               </span>
                             ) : (
-                              <span className="text-xs text-muted-foreground">Sin categoría</span>
+                              <span className="text-xs text-muted-foreground font-light">Sin categoría</span>
                             )}
-                            <span className="text-xs text-muted-foreground">·</span>
-                            <span className="text-xs text-muted-foreground">{transaction.date}</span>
+                            <span className="text-xs text-muted-foreground font-light">·</span>
+                            <span className="text-xs text-muted-foreground font-light">{transaction.date}</span>
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         <div className="text-right">
-                          <p className={`font-bold text-base ${
-                            transaction.type === 'income' 
-                              ? 'text-emerald-600 dark:text-emerald-400' 
+                          <p className={`font-bold text-base tracking-tight ${transaction.type === 'income'
+                              ? 'text-emerald-600 dark:text-emerald-400'
                               : 'text-rose-600 dark:text-rose-400'
-                          }`}>
+                            }`}>
                             {transaction.type === 'income' ? '+' : '-'}{formatAmount(transaction.amount, transaction.currency || 'ARS')}
                           </p>
                           {isUSD && (
