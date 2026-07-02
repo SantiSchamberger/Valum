@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -60,6 +60,17 @@ export default function AnalyticsClient({
   const [selectedCurrency, setSelectedCurrency] = useState<'ARS' | 'USD'>('ARS')
   const [selectedMonth, setSelectedMonth] = useState<string>('')
   const [selectedYear, setSelectedYear] = useState<string>('')
+
+  // Estado de privacidad heredado del Dashboard
+  const [hideBalances, setHideBalances] = useState(false)
+
+  // Cargar preferencia de privacidad sincronizada
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedPrivacy = localStorage.getItem('valumHideBalances') === 'true'
+      setHideBalances(storedPrivacy)
+    }
+  }, [])
 
   const handleSelectedYearChange = (value: string | null) => {
     setSelectedYear(value ?? '')
@@ -142,12 +153,10 @@ export default function AnalyticsClient({
       }, [])
       .sort((a: any, b: any) => b.value - a.value)
 
-    // ESTRUCTURA DE TENDENCIA DIARIA COMPLETA ACUMULATIVA
     const yearNum = parseInt(currentYear)
     const monthNum = parseInt(currentMonth)
     const daysInMonth = new Date(yearNum, monthNum, 0).getDate()
 
-    // 1. Agrupamos primero los movimientos puros del día
     const pureDailyData: { [key: number]: { income: number; expense: number } } = {}
     for (let d = 1; d <= daysInMonth; d++) {
       pureDailyData[d] = { income: 0, expense: 0 }
@@ -162,7 +171,6 @@ export default function AnalyticsClient({
       }
     })
 
-    // 2. Construimos la serie temporal acumulada para que refleje la realidad mensual
     const dailyTrend = []
     let accumulatedIncome = 0
     let accumulatedExpense = 0
@@ -177,7 +185,7 @@ export default function AnalyticsClient({
         date: `${dayStr}/${currentMonth}`,
         income: accumulatedIncome,
         expense: accumulatedExpense,
-        balance: currentRunningBalance, // Balance neto real del usuario a ese día
+        balance: currentRunningBalance,
         rawDay: d
       })
     }
@@ -241,9 +249,16 @@ export default function AnalyticsClient({
     return `${currSymbol}${formattedNumber}`
   }
 
+  // Formateador local exclusivo para las tarjetas superiores de análisis que soporta la censura
+  const fmtHeaderCard = (v: number) => {
+    if (hideBalances) {
+      return `${currSymbol} ••••••`
+    }
+    return fmt(v)
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Añadido también el gradiente para el área del Balance */}
       <svg className="absolute w-0 h-0" width="0" height="0">
         <defs>
           <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
@@ -363,7 +378,7 @@ export default function AnalyticsClient({
               </CardContent>
             </Card>
 
-            {/* Summary Cards */}
+            {/* Summary Cards con Censura Sincronizada */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
               <Card className="border-0 shadow-md overflow-hidden">
                 <div className="h-1 bg-emerald-500" />
@@ -372,7 +387,7 @@ export default function AnalyticsClient({
                     <div>
                       <p className="text-sm text-muted-foreground mb-1 font-medium">Ingresos</p>
                       <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight">
-                        {fmt(monthlyAnalytics.totalIncome)}
+                        {fmtHeaderCard(monthlyAnalytics.totalIncome)}
                       </p>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shadow-sm">
@@ -389,7 +404,7 @@ export default function AnalyticsClient({
                     <div>
                       <p className="text-sm text-muted-foreground mb-1 font-medium">Gastos</p>
                       <p className="text-3xl font-bold text-rose-600 dark:text-rose-400 tracking-tight">
-                        {fmt(monthlyAnalytics.totalExpense)}
+                        {fmtHeaderCard(monthlyAnalytics.totalExpense)}
                       </p>
                     </div>
                     <div className="w-12 h-12 rounded-xl bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center shadow-sm">
@@ -406,7 +421,7 @@ export default function AnalyticsClient({
                     <div>
                       <p className="text-sm text-muted-foreground mb-1 font-medium">Balance</p>
                       <p className={`text-3xl font-bold tracking-tight ${monthlyAnalytics.balance >= 0 ? 'text-violeta-principal' : 'text-orange-600 dark:text-orange-400'}`}>
-                        {fmt(monthlyAnalytics.balance)}
+                        {fmtHeaderCard(monthlyAnalytics.balance)}
                       </p>
                     </div>
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${monthlyAnalytics.balance >= 0 ? 'bg-violeta-principal/10' : 'bg-orange-100 dark:bg-orange-900/30'
@@ -513,7 +528,7 @@ export default function AnalyticsClient({
               </Card>
             )}
 
-            {/* Tendencia Diaria Acumulativa Rediseñada */}
+            {/* Tendencia Diaria */}
             {monthlyAnalytics.dailyTrend.length > 0 && (
               <Card className="border-0 shadow-md">
                 <div className="h-1 bg-azul-profundo dark:bg-violeta-principal rounded-t-lg" />
@@ -533,7 +548,6 @@ export default function AnalyticsClient({
                       />
                       <Legend iconType="circle" iconSize={8} wrapperStyle={{ paddingTop: 12, fontSize: '13px' }} />
 
-                      {/* Área de Balance Neto Acumulado - Destacado en Violeta de la Marca */}
                       <Area
                         type="monotone"
                         dataKey="balance"
@@ -545,7 +559,6 @@ export default function AnalyticsClient({
                         activeDot={{ r: 6, strokeWidth: 0, fill: '#6C3BFF' }}
                       />
 
-                      {/* Línea de Ingresos Acumulados - Verde */}
                       <Area
                         type="monotone"
                         dataKey="income"
@@ -557,7 +570,6 @@ export default function AnalyticsClient({
                         activeDot={{ r: 4, strokeWidth: 0, fill: '#10B981' }}
                       />
 
-                      {/* Línea de Gastos Acumulados - Rojo */}
                       <Area
                         type="monotone"
                         dataKey="expense"
