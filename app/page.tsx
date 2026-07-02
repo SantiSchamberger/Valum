@@ -51,11 +51,11 @@ export default async function HomePage() {
         <div className="space-y-6 text-center mb-12 flex flex-col items-center">
 
           {/* Logotipo Vertical de la Marca */}
-          <div className="mb-4">
+          <div className="mb-6 md:mb-8 transition-transform duration-300 hover:scale-[1.01]">
             <img
               src="/logovertical.png"
               alt="Isologo Valum"
-              className="h-20 md:h-24 w-auto object-contain select-none pointer-events-none"
+              className="h-28 md:h-36 w-auto object-contain select-none pointer-events-none"
             />
           </div>
 
