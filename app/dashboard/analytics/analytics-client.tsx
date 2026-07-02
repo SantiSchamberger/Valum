@@ -12,8 +12,8 @@ import {
   Cell,
   BarChart,
   Bar,
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -133,12 +133,12 @@ export default function AnalyticsClient({
         }
         return acc
       }, [])
-      .sort((a: any, b: any) => b.value - a.value) // Ordenadas de mayor a menor gasto
+      .sort((a: any, b: any) => b.value - a.value)
 
     const dailyTrend = monthTransactions
       .reduce((acc: any, t) => {
         const date = new Date(t.date)
-        const dayKey = date.toLocaleDateString('es-ES')
+        const dayKey = date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })
         const existing = acc.find((item: any) => item.date === dayKey)
 
         if (existing) {
@@ -153,7 +153,11 @@ export default function AnalyticsClient({
         }
         return acc
       }, [])
-      .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .sort((a: any, b: any) => {
+        const [dayA, monthA] = a.date.split('/')
+        const [dayB, monthB] = b.date.split('/')
+        return new Date(2026, monthA - 1, dayA).getTime() - new Date(2026, monthB - 1, dayB).getTime()
+      })
 
     return { totalIncome, totalExpense, balance, expensesByCategory, dailyTrend, monthTransactions }
   }, [filteredTransactions, currentMonth, currentYear])
@@ -202,10 +206,33 @@ export default function AnalyticsClient({
   }
 
   const currSymbol = selectedCurrency === 'USD' ? 'US$' : '$'
-  const fmt = (v: number) => `${currSymbol}${v.toFixed(2)}`
+
+  // Formateador regionalizado para Argentina ($2.000.000,00)
+  const fmt = (v: number) => {
+    const formattedNumber = new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(v)
+
+    return `${currSymbol}${formattedNumber}`
+  }
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Gradientes reutilizables para los gráficos de área */}
+      <svg className="absolute w-0 h-0" width="0" height="0">
+        <defs>
+          <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#6C3BFF" stopOpacity={0.25} />
+            <stop offset="95%" stopColor="#6C3BFF" stopOpacity={0.0} />
+          </linearGradient>
+          <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#A78BFA" stopOpacity={0.25} />
+            <stop offset="95%" stopColor="#A78BFA" stopOpacity={0.0} />
+          </linearGradient>
+        </defs>
+      </svg>
+
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -363,7 +390,7 @@ export default function AnalyticsClient({
               </Card>
             </div>
 
-            {/* Distribución de Gastos Modificada a Columnas Laterales */}
+            {/* Gastos por Categoría */}
             {monthlyAnalytics.expensesByCategory.length > 0 && (
               <Card className="border-0 shadow-md mb-6">
                 <div className="h-1 bg-violeta-principal rounded-t-lg" />
@@ -374,7 +401,7 @@ export default function AnalyticsClient({
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
 
-                    {/* Columna Izquierda: Gráfico de Torta Limpio */}
+                    {/* Columna Gráfico de Torta */}
                     <div className="h-[280px] w-full flex items-center justify-center">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
@@ -391,12 +418,15 @@ export default function AnalyticsClient({
                               <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                           </Pie>
-                          <Tooltip formatter={(value) => fmt(value as number)} />
+                          <Tooltip
+                            contentStyle={{ borderRadius: '12px', background: 'var(--card)', borderColor: 'var(--border)' }}
+                            formatter={(value) => fmt(value as number)}
+                          />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
 
-                    {/* Columna Derecha: Listado Detallado Completo */}
+                    {/* Columna Listado Lateral */}
                     <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
                       {monthlyAnalytics.expensesByCategory.map((category: any, index: number) => {
                         const percentage = ((category.value / monthlyAnalytics.totalExpense) * 100).toFixed(1);
@@ -439,14 +469,17 @@ export default function AnalyticsClient({
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={280}>
-                    <BarChart data={analytics.transactionsByMonth}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-10" />
-                      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip formatter={(value) => fmt(value as number)} />
-                      <Legend />
-                      <Bar dataKey="income" fill="#10B981" name="Ingresos" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="expense" fill="#EF4444" name="Gastos" radius={[4, 4, 0, 0]} />
+                    <BarChart data={analytics.transactionsByMonth} barGap={6}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-5" vertical={false} />
+                      <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'currentColor' }} tickLine={false} axisLine={false} dy={8} />
+                      <YAxis tick={{ fontSize: 11, fill: 'currentColor' }} tickLine={false} axisLine={false} dx={-8} />
+                      <Tooltip
+                        contentStyle={{ borderRadius: '12px', background: 'var(--card)', borderColor: 'var(--border)' }}
+                        formatter={(value) => fmt(value as number)}
+                      />
+                      <Legend iconType="circle" iconSize={8} wrapperStyle={{ pt: 12, fontSize: '13px' }} />
+                      <Bar dataKey="income" fill="#6C3BFF" name="Ingresos" radius={[6, 6, 0, 0]} maxBarSize={28} />
+                      <Bar dataKey="expense" fill="#A78BFA" name="Gastos" radius={[6, 6, 0, 0]} maxBarSize={28} />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -459,35 +492,40 @@ export default function AnalyticsClient({
                 <div className="h-1 bg-azul-profundo dark:bg-violeta-principal rounded-t-lg" />
                 <CardHeader className="pt-5">
                   <CardTitle className="text-base font-bold tracking-tight">Tendencia Diaria — {getMonthName(currentMonth)} {currentYear}</CardTitle>
-                  <CardDescription className="font-light">Movimientos diarios de tu cuenta este mes</CardDescription>
+                  <CardDescription className="font-light">Movimientos de cuenta con volumen de comportamiento acumulado</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={360}>
-                    <LineChart data={monthlyAnalytics.dailyTrend}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-10" />
-                      <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip formatter={(value) => fmt(value as number)} />
-                      <Legend />
-                      <Line
+                    <AreaChart data={monthlyAnalytics.dailyTrend}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-5" vertical={false} />
+                      <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'currentColor' }} tickLine={false} axisLine={false} dy={8} />
+                      <YAxis tick={{ fontSize: 11, fill: 'currentColor' }} tickLine={false} axisLine={false} dx={-8} />
+                      <Tooltip
+                        contentStyle={{ borderRadius: '12px', background: 'var(--card)', borderColor: 'var(--border)' }}
+                        formatter={(value) => fmt(value as number)}
+                      />
+                      <Legend iconType="circle" iconSize={8} wrapperStyle={{ pt: 12, fontSize: '13px' }} />
+                      <Area
                         type="monotone"
                         dataKey="income"
-                        stroke="#10B981"
+                        stroke="#6C3BFF"
+                        fill="url(#colorIncome)"
                         name="Ingresos"
                         strokeWidth={2.5}
-                        dot={{ r: 3 }}
-                        activeDot={{ r: 5 }}
+                        dot={false}
+                        activeDot={{ r: 5, strokeWidth: 0, fill: '#6C3BFF' }}
                       />
-                      <Line
+                      <Area
                         type="monotone"
                         dataKey="expense"
-                        stroke="#EF4444"
+                        stroke="#A78BFA"
+                        fill="url(#colorExpense)"
                         name="Gastos"
                         strokeWidth={2.5}
-                        dot={{ r: 3 }}
-                        activeDot={{ r: 5 }}
+                        dot={false}
+                        activeDot={{ r: 5, strokeWidth: 0, fill: '#A78BFA' }}
                       />
-                    </LineChart>
+                    </AreaChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
