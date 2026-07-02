@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, BarChart3 } from 'lucide-react'
 import Link from 'next/link'
 import {
   PieChart,
@@ -62,7 +62,6 @@ export default function AnalyticsClient({
     setSelectedMonth(value ?? '')
   }
 
-  // Initialize selected month and year to current
   const now = new Date()
   const defaultMonth = String(now.getMonth() + 1).padStart(2, '0')
   const defaultYear = String(now.getFullYear())
@@ -77,7 +76,6 @@ export default function AnalyticsClient({
     [transactions, selectedCurrency]
   )
 
-  // Get unique years from transactions
   const years = useMemo(() => {
     const yearSet = new Set(transactions.map(t => {
       const date = new Date(t.date)
@@ -86,7 +84,6 @@ export default function AnalyticsClient({
     return Array.from(yearSet).sort((a, b) => Number(b) - Number(a))
   }, [transactions])
 
-  // Get months in selected year
   const months = useMemo(() => {
     const monthSet = new Set(
       filteredTransactions
@@ -131,11 +128,12 @@ export default function AnalyticsClient({
           acc.push({
             name: categoryName,
             value: t.amount,
-            color: t.categories?.color || '#3B82F6',
+            color: t.categories?.color || '#6C3BFF',
           })
         }
         return acc
       }, [])
+      .sort((a: any, b: any) => b.value - a.value) // Ordenadas de mayor a menor gasto
 
     const dailyTrend = monthTransactions
       .reduce((acc: any, t) => {
@@ -160,7 +158,6 @@ export default function AnalyticsClient({
     return { totalIncome, totalExpense, balance, expensesByCategory, dailyTrend, monthTransactions }
   }, [filteredTransactions, currentMonth, currentYear])
 
-  // Also keep the annual analytics for the trend chart
   const analytics = useMemo(() => {
     const totalIncome = filteredTransactions
       .filter(t => t.type === 'income')
@@ -215,37 +212,35 @@ export default function AnalyticsClient({
           <div className="flex flex-wrap justify-between items-center gap-3 py-4 sm:h-16 sm:py-0">
             <div className="flex items-center gap-3">
               <Link href="/dashboard">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="font-medium">
                   <ArrowLeft className="w-4 h-4 mr-1.5" />
                   Volver
                 </Button>
               </Link>
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-sm">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violeta-principal to-violeta-claro flex items-center justify-center shadow-sm">
                   <BarChart3 className="w-4 h-4 text-white" />
                 </div>
-                <h1 className="text-xl font-bold text-foreground">Análisis Financiero</h1>
+                <h1 className="text-xl font-bold text-foreground tracking-tight">Análisis Financiero</h1>
               </div>
             </div>
             {hasUSD && (
               <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
                 <button
                   onClick={() => setSelectedCurrency('ARS')}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
-                    selectedCurrency === 'ARS'
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${selectedCurrency === 'ARS'
                       ? 'bg-card text-foreground shadow-sm'
                       : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                    }`}
                 >
                   Pesos ($)
                 </button>
                 <button
                   onClick={() => setSelectedCurrency('USD')}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
-                    selectedCurrency === 'USD'
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${selectedCurrency === 'USD'
                       ? 'bg-card text-foreground shadow-sm'
                       : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                    }`}
                 >
                   Dólares (US$)
                 </button>
@@ -265,11 +260,11 @@ export default function AnalyticsClient({
                 <BarChart3 className="w-8 h-8 text-muted-foreground" />
               </div>
               <p className="font-medium text-foreground mb-2">No hay transacciones para analizar</p>
-              <p className="text-sm text-muted-foreground mb-6">
+              <p className="text-sm text-muted-foreground font-light mb-6">
                 Agregá transacciones para ver gráficos y análisis detallados
               </p>
               <Link href="/dashboard/transactions">
-                <Button className="shadow-sm">Ver Transacciones</Button>
+                <Button className="shadow-sm font-medium">Ver Transacciones</Button>
               </Link>
             </CardContent>
           </Card>
@@ -278,8 +273,8 @@ export default function AnalyticsClient({
             {/* Month/Year Selector */}
             <Card className="border-0 shadow-md mb-6">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-bold">Resumen Mensual</CardTitle>
-                <CardDescription>Selecciona el mes y año para analizar</CardDescription>
+                <CardTitle className="text-base font-bold tracking-tight">Resumen Mensual</CardTitle>
+                <CardDescription className="font-light">Selecciona el mes y año para analizar</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-3 items-center">
@@ -299,7 +294,7 @@ export default function AnalyticsClient({
                       <SelectValue placeholder="Mes" />
                     </SelectTrigger>
                     <SelectContent>
-                      {Array.from({length: 12}, (_, i) => {
+                      {Array.from({ length: 12 }, (_, i) => {
                         const monthNum = String(i + 1).padStart(2, '0')
                         return (
                           <SelectItem key={monthNum} value={monthNum}>
@@ -313,15 +308,15 @@ export default function AnalyticsClient({
               </CardContent>
             </Card>
 
-            {/* Summary Cards - Monthly */}
+            {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
               <Card className="border-0 shadow-md overflow-hidden">
-                <div className="h-1 bg-gradient-to-r from-emerald-400 to-green-500" />
+                <div className="h-1 bg-emerald-500" />
                 <CardContent className="pt-5 pb-5">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground mb-1 font-medium">Ingresos</p>
-                      <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                      <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight">
                         {fmt(monthlyAnalytics.totalIncome)}
                       </p>
                     </div>
@@ -333,12 +328,12 @@ export default function AnalyticsClient({
               </Card>
 
               <Card className="border-0 shadow-md overflow-hidden">
-                <div className="h-1 bg-gradient-to-r from-rose-400 to-red-500" />
+                <div className="h-1 bg-rose-500" />
                 <CardContent className="pt-5 pb-5">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground mb-1 font-medium">Gastos</p>
-                      <p className="text-3xl font-bold text-rose-600 dark:text-rose-400">
+                      <p className="text-3xl font-bold text-rose-600 dark:text-rose-400 tracking-tight">
                         {fmt(monthlyAnalytics.totalExpense)}
                       </p>
                     </div>
@@ -350,52 +345,46 @@ export default function AnalyticsClient({
               </Card>
 
               <Card className="border-0 shadow-md overflow-hidden">
-                <div className={`h-1 ${monthlyAnalytics.balance >= 0 ? 'bg-gradient-to-r from-blue-400 to-indigo-500' : 'bg-gradient-to-r from-orange-400 to-red-500'}`} />
+                <div className={`h-1 ${monthlyAnalytics.balance >= 0 ? 'bg-violeta-principal' : 'bg-orange-500'}`} />
                 <CardContent className="pt-5 pb-5">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground mb-1 font-medium">Balance</p>
-                      <p className={`text-3xl font-bold ${monthlyAnalytics.balance >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                      <p className={`text-3xl font-bold tracking-tight ${monthlyAnalytics.balance >= 0 ? 'text-violeta-principal' : 'text-orange-600 dark:text-orange-400'}`}>
                         {fmt(monthlyAnalytics.balance)}
                       </p>
                     </div>
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${
-                      monthlyAnalytics.balance >= 0
-                        ? 'bg-blue-100 dark:bg-blue-900/30'
-                        : 'bg-orange-100 dark:bg-orange-900/30'
-                    }`}>
-                      <DollarSign className={`w-6 h-6 ${monthlyAnalytics.balance >= 0 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'}`} />
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-sm ${monthlyAnalytics.balance >= 0 ? 'bg-violeta-principal/10' : 'bg-orange-100 dark:bg-orange-900/30'
+                      }`}>
+                      <DollarSign className={`w-6 h-6 ${monthlyAnalytics.balance >= 0 ? 'text-violeta-principal' : 'text-orange-600 dark:text-orange-400'}`} />
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              {monthlyAnalytics.expensesByCategory.length > 0 && (
-                <Card className="border-0 shadow-md">
-                  <div className="h-1 bg-gradient-to-r from-violet-400 to-purple-500 rounded-t-lg" />
-                  <CardHeader className="pt-5">
-                    <CardTitle className="text-base font-bold">Gastos por Categoría</CardTitle>
-                    <CardDescription>Distribución de gastos en {getMonthName(currentMonth)} {currentYear}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {monthlyAnalytics.expensesByCategory.length === 0 ? (
-                      <div className="h-[280px] flex items-center justify-center text-muted-foreground">
-                        No hay gastos registrados este mes
-                      </div>
-                    ) : (
-                      <ResponsiveContainer width="100%" height={280}>
+            {/* Distribución de Gastos Modificada a Columnas Laterales */}
+            {monthlyAnalytics.expensesByCategory.length > 0 && (
+              <Card className="border-0 shadow-md mb-6">
+                <div className="h-1 bg-violeta-principal rounded-t-lg" />
+                <CardHeader className="pt-5">
+                  <CardTitle className="text-base font-bold tracking-tight">Gastos por Categoría</CardTitle>
+                  <CardDescription className="font-light">Distribución de gastos en {getMonthName(currentMonth)} {currentYear}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+
+                    {/* Columna Izquierda: Gráfico de Torta Limpio */}
+                    <div className="h-[280px] w-full flex items-center justify-center">
+                      <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
                             data={monthlyAnalytics.expensesByCategory}
                             cx="50%"
                             cy="50%"
                             labelLine={false}
-                            label={({ name, value }) => `${name}: ${currSymbol}${value.toFixed(0)}`}
-                            outerRadius={90}
-                            fill="#8884d8"
+                            outerRadius={100}
+                            fill="#6C3BFF"
                             dataKey="value"
                           >
                             {monthlyAnalytics.expensesByCategory.map((entry: any, index: number) => (
@@ -405,41 +394,72 @@ export default function AnalyticsClient({
                           <Tooltip formatter={(value) => fmt(value as number)} />
                         </PieChart>
                       </ResponsiveContainer>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
+                    </div>
 
-              {analytics.transactionsByMonth.length > 0 && (
-                <Card className="border-0 shadow-md">
-                  <div className="h-1 bg-gradient-to-r from-blue-400 to-cyan-500 rounded-t-lg" />
-                  <CardHeader className="pt-5">
-                    <CardTitle className="text-base font-bold">Tendencia Anual</CardTitle>
-                    <CardDescription>Ingresos vs Gastos por mes (últimos 12 meses)</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={280}>
-                      <BarChart data={analytics.transactionsByMonth}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-10" />
-                        <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                        <YAxis tick={{ fontSize: 12 }} />
-                        <Tooltip formatter={(value) => fmt(value as number)} />
-                        <Legend />
-                        <Bar dataKey="income" fill="#10B981" name="Ingresos" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="expense" fill="#EF4444" name="Gastos" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                    {/* Columna Derecha: Listado Detallado Completo */}
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                      {monthlyAnalytics.expensesByCategory.map((category: any, index: number) => {
+                        const percentage = ((category.value / monthlyAnalytics.totalExpense) * 100).toFixed(1);
+                        return (
+                          <div key={index} className="flex items-center justify-between bg-muted/30 p-3 rounded-xl border border-border/40">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div
+                                className="w-3.5 h-3.5 rounded-full shrink-0 shadow-sm"
+                                style={{ backgroundColor: category.color }}
+                              />
+                              <span className="font-medium text-sm text-foreground truncate">
+                                {category.name}
+                              </span>
+                            </div>
+                            <div className="text-right shrink-0 pl-4">
+                              <span className="font-semibold text-sm text-foreground block">
+                                {fmt(category.value)}
+                              </span>
+                              <span className="text-xs text-muted-foreground font-light">
+                                {percentage}%
+                              </span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
 
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Tendencia Anual */}
+            {analytics.transactionsByMonth.length > 0 && (
+              <Card className="border-0 shadow-md mb-6">
+                <div className="h-1 bg-violeta-claro rounded-t-lg" />
+                <CardHeader className="pt-5">
+                  <CardTitle className="text-base font-bold tracking-tight">Tendencia Anual</CardTitle>
+                  <CardDescription className="font-light">Ingresos vs Gastos por mes (últimos 12 meses)</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={analytics.transactionsByMonth}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-10" />
+                      <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip formatter={(value) => fmt(value as number)} />
+                      <Legend />
+                      <Bar dataKey="income" fill="#10B981" name="Ingresos" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="expense" fill="#EF4444" name="Gastos" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Tendencia Diaria */}
             {monthlyAnalytics.dailyTrend.length > 0 && (
               <Card className="border-0 shadow-md">
-                <div className="h-1 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-t-lg" />
+                <div className="h-1 bg-azul-profundo dark:bg-violeta-principal rounded-t-lg" />
                 <CardHeader className="pt-5">
-                  <CardTitle className="text-base font-bold">Tendencia Diaria — {getMonthName(currentMonth)} {currentYear}</CardTitle>
-                  <CardDescription>Movimientos diarios de tu cuenta este mes</CardDescription>
+                  <CardTitle className="text-base font-bold tracking-tight">Tendencia Diaria — {getMonthName(currentMonth)} {currentYear}</CardTitle>
+                  <CardDescription className="font-light">Movimientos diarios de tu cuenta este mes</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={360}>
