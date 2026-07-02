@@ -207,7 +207,6 @@ export default function AnalyticsClient({
 
   const currSymbol = selectedCurrency === 'USD' ? 'US$' : '$'
 
-  // Formateador regionalizado para Argentina ($2.000.000,00)
   const fmt = (v: number) => {
     const formattedNumber = new Intl.NumberFormat('es-AR', {
       minimumFractionDigits: 2,
@@ -219,16 +218,16 @@ export default function AnalyticsClient({
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Gradientes reutilizables para los gráficos de área */}
+      {/* Definición de gradientes reutilizables para los gráficos de área (Verde y Rojo) */}
       <svg className="absolute w-0 h-0" width="0" height="0">
         <defs>
           <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#6C3BFF" stopOpacity={0.25} />
-            <stop offset="95%" stopColor="#6C3BFF" stopOpacity={0.0} />
+            <stop offset="5%" stopColor="#10B981" stopOpacity={0.2} />
+            <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
           </linearGradient>
           <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#A78BFA" stopOpacity={0.25} />
-            <stop offset="95%" stopColor="#A78BFA" stopOpacity={0.0} />
+            <stop offset="5%" stopColor="#EF4444" stopOpacity={0.2} />
+            <stop offset="95%" stopColor="#EF4444" stopOpacity={0.0} />
           </linearGradient>
         </defs>
       </svg>
@@ -256,8 +255,8 @@ export default function AnalyticsClient({
                 <button
                   onClick={() => setSelectedCurrency('ARS')}
                   className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${selectedCurrency === 'ARS'
-                    ? 'bg-card text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
                     }`}
                 >
                   Pesos ($)
@@ -265,8 +264,8 @@ export default function AnalyticsClient({
                 <button
                   onClick={() => setSelectedCurrency('USD')}
                   className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${selectedCurrency === 'USD'
-                    ? 'bg-card text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
                     }`}
                 >
                   Dólares (US$)
@@ -479,7 +478,7 @@ export default function AnalyticsClient({
                       />
                       <Legend iconType="circle" iconSize={8} wrapperStyle={{ paddingTop: 12, fontSize: '13px' }} />
 
-                      {/* Restaurados los colores universales optimizados para Modo Claro y Modo Oscuro */}
+                      {/* Colores Universales Sincronizados */}
                       <Bar dataKey="income" fill="#10B981" name="Ingresos" radius={[6, 6, 0, 0]} maxBarSize={28} />
                       <Bar dataKey="expense" fill="#EF4444" name="Gastos" radius={[6, 6, 0, 0]} maxBarSize={28} />
                     </BarChart>
@@ -507,25 +506,29 @@ export default function AnalyticsClient({
                         formatter={(value) => fmt(value as number)}
                       />
                       <Legend iconType="circle" iconSize={8} wrapperStyle={{ paddingTop: 12, fontSize: '13px' }} />
+
+                      {/* Área de Ingresos - Verde */}
                       <Area
                         type="monotone"
                         dataKey="income"
-                        stroke="#6C3BFF"
+                        stroke="#10B981"
                         fill="url(#colorIncome)"
                         name="Ingresos"
                         strokeWidth={2.5}
                         dot={false}
-                        activeDot={{ r: 5, strokeWidth: 0, fill: '#6C3BFF' }}
+                        activeDot={{ r: 5, strokeWidth: 0, fill: '#10B981' }}
                       />
+
+                      {/* Área de Gastos - Rojo */}
                       <Area
                         type="monotone"
                         dataKey="expense"
-                        stroke="#A78BFA"
+                        stroke="#EF4444"
                         fill="url(#colorExpense)"
                         name="Gastos"
                         strokeWidth={2.5}
                         dot={false}
-                        activeDot={{ r: 5, strokeWidth: 0, fill: '#A78BFA' }}
+                        activeDot={{ r: 5, strokeWidth: 0, fill: '#EF4444' }}
                       />
                     </AreaChart>
                   </ResponsiveContainer>
