@@ -156,7 +156,7 @@ export default function AnalyticsClient({
       .sort((a: any, b: any) => {
         const [dayA, monthA] = a.date.split('/')
         const [dayB, monthB] = b.date.split('/')
-        return new Date(2026, monthA - 1, dayA).getTime() - new Date(2026, monthB - 1, dayB).getTime()
+        return new Date(2026, Number(monthA) - 1, Number(dayA)).getTime() - new Date(2026, Number(monthB) - 1, Number(dayB)).getTime()
       })
 
     return { totalIncome, totalExpense, balance, expensesByCategory, dailyTrend, monthTransactions }
@@ -477,7 +477,7 @@ export default function AnalyticsClient({
                         contentStyle={{ borderRadius: '12px', background: 'var(--card)', borderColor: 'var(--border)' }}
                         formatter={(value) => fmt(value as number)}
                       />
-                      <Legend iconType="circle" iconSize={8} wrapperStyle={{ pt: 12, fontSize: '13px' }} />
+                      <Legend iconType="circle" iconSize={8} wrapperStyle={{ paddingTop: 12, fontSize: '13px' }} />
                       <Bar dataKey="income" fill="#6C3BFF" name="Ingresos" radius={[6, 6, 0, 0]} maxBarSize={28} />
                       <Bar dataKey="expense" fill="#A78BFA" name="Gastos" radius={[6, 6, 0, 0]} maxBarSize={28} />
                     </BarChart>
@@ -504,7 +504,7 @@ export default function AnalyticsClient({
                         contentStyle={{ borderRadius: '12px', background: 'var(--card)', borderColor: 'var(--border)' }}
                         formatter={(value) => fmt(value as number)}
                       />
-                      <Legend iconType="circle" iconSize={8} wrapperStyle={{ pt: 12, fontSize: '13px' }} />
+                      <Legend iconType="circle" iconSize={8} wrapperStyle={{ paddingTop: 12, fontSize: '13px' }} />
                       <Area
                         type="monotone"
                         dataKey="income"
