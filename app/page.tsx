@@ -17,29 +17,34 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
 
-            {/* Contenedor del Logo (Esquina Superior Izquierda) */}
-            <div className="flex items-center">
+            {/* Contenedor del Logo Optimizado */}
+            <Link href="/" className="flex items-center group">
               <img
                 src="/logo.png"
                 alt="Logo de Valum"
-                className="h-16 w-auto object-contain"
+                /* 
+                  CAMBIOS AQUÍ: 
+                  - Reducido de h-16 a h-7 (escalando a h-8 en pantallas medianas) para achicarlo.
+                  - Se añade 'dark:invert' para que las letras oscuras se vuelvan blancas en fondo oscuro.
+                  - 'transition-opacity' para un feedback visual sutil al pasar el mouse.
+                */
+                className="h-7 md:h-8 w-auto object-contain dark:invert transition-opacity group-hover:opacity-90"
               />
-            </div>
+            </Link>
 
             {/* Botones de la Derecha */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <Link href="/auth/login" className="cursor-pointer">
-                <Button variant="ghost" size="sm" className="cursor-pointer hover:bg-muted">
+                <Button variant="ghost" size="sm" className="cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted font-medium">
                   Inicia sesión
                 </Button>
               </Link>
               <Link href="/auth/sign-up" className="cursor-pointer">
-                <Button size="sm" className="cursor-pointer hover:opacity-90 transition-opacity">
+                <Button size="sm" className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 rounded-md transition-all shadow-sm">
                   Regístrate
                 </Button>
               </Link>
