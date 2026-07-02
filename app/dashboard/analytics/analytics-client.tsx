@@ -45,16 +45,10 @@ interface AnalyticsClientProps {
   categories: Category[]
 }
 
-// CORRECCIÓN DEFINITIVA: Parsea el texto puro YYYY-MM-DD ignorando desfases UTC de servidores
 const getArgentinaDate = (dateString: string): Date => {
   if (!dateString) return new Date()
-
-  // Extraemos la parte de la fecha YYYY-MM-DD pura (ej: "2026-07-01")
   const pureDateSegment = dateString.split('T')[0]
   const [yearStr, monthStr, dayStr] = pureDateSegment.split('-')
-
-  // Creamos el objeto Date forzando las coordenadas locales exactas
-  // El mes en JavaScript va de 0 a 11, por eso restamos 1
   return new Date(Number(yearStr), Number(monthStr) - 1, Number(dayStr), 12, 0, 0)
 }
 
@@ -75,7 +69,6 @@ export default function AnalyticsClient({
     setSelectedMonth(value ?? '')
   }
 
-  // Inicializar selectores basados estrictamente en la fecha actual de Argentina
   const nowInArg = getArgentinaDate(new Date().toISOString().split('T')[0])
   const defaultMonth = String(nowInArg.getMonth() + 1).padStart(2, '0')
   const defaultYear = String(nowInArg.getFullYear())
@@ -149,39 +142,45 @@ export default function AnalyticsClient({
       }, [])
       .sort((a: any, b: any) => b.value - a.value)
 
-    // TENDENCIA DIARIA COMPLETA DE FORMA SEGURA
+    // ESTRUCTURA DE TENDENCIA DIARIA COMPLETA ACUMULATIVA
     const yearNum = parseInt(currentYear)
     const monthNum = parseInt(currentMonth)
     const daysInMonth = new Date(yearNum, monthNum, 0).getDate()
 
-    const dailyTrendMap: { [key: string]: any } = {}
+    // 1. Agrupamos primero los movimientos puros del día
+    const pureDailyData: { [key: number]: { income: number; expense: number } } = {}
     for (let d = 1; d <= daysInMonth; d++) {
-      const dayStr = String(d).padStart(2, '0')
-      const key = `${dayStr}/${currentMonth}`
-      dailyTrendMap[key] = {
-        date: key,
-        income: 0,
-        expense: 0,
-        rawDay: d
-      }
+      pureDailyData[d] = { income: 0, expense: 0 }
     }
 
     monthTransactions.forEach(t => {
       const argDate = getArgentinaDate(t.date)
-      const dayStr = String(argDate.getDate()).padStart(2, '0')
-      const monthStr = String(argDate.getMonth() + 1).padStart(2, '0')
-      const key = `${dayStr}/${monthStr}`
-
-      if (dailyTrendMap[key]) {
-        if (t.type === 'income') {
-          dailyTrendMap[key].income += t.amount
-        } else {
-          dailyTrendMap[key].expense += t.amount
-        }
+      const day = argDate.getDate()
+      if (pureDailyData[day]) {
+        if (t.type === 'income') pureDailyData[day].income += t.amount
+        else pureDailyData[day].expense += t.amount
       }
     })
 
-    const dailyTrend = Object.values(dailyTrendMap).sort((a: any, b: any) => a.rawDay - b.rawDay)
+    // 2. Construimos la serie temporal acumulada para que refleje la realidad mensual
+    const dailyTrend = []
+    let accumulatedIncome = 0
+    let accumulatedExpense = 0
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      accumulatedIncome += pureDailyData[d].income
+      accumulatedExpense += pureDailyData[d].expense
+      const currentRunningBalance = accumulatedIncome - accumulatedExpense
+
+      const dayStr = String(d).padStart(2, '0')
+      dailyTrend.push({
+        date: `${dayStr}/${currentMonth}`,
+        income: accumulatedIncome,
+        expense: accumulatedExpense,
+        balance: currentRunningBalance, // Balance neto real del usuario a ese día
+        rawDay: d
+      })
+    }
 
     return { totalIncome, totalExpense, balance, expensesByCategory, dailyTrend, monthTransactions }
   }, [filteredTransactions, currentMonth, currentYear])
@@ -244,15 +243,20 @@ export default function AnalyticsClient({
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Añadido también el gradiente para el área del Balance */}
       <svg className="absolute w-0 h-0" width="0" height="0">
         <defs>
           <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#10B981" stopOpacity={0.2} />
+            <stop offset="5%" stopColor="#10B981" stopOpacity={0.15} />
             <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
           </linearGradient>
           <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#EF4444" stopOpacity={0.2} />
+            <stop offset="5%" stopColor="#EF4444" stopOpacity={0.15} />
             <stop offset="95%" stopColor="#EF4444" stopOpacity={0.0} />
+          </linearGradient>
+          <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#6C3BFF" stopOpacity={0.2} />
+            <stop offset="95%" stopColor="#6C3BFF" stopOpacity={0.0} />
           </linearGradient>
         </defs>
       </svg>
@@ -425,7 +429,6 @@ export default function AnalyticsClient({
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
 
-                    {/* Columna Gráfico de Torta */}
                     <div className="h-[280px] w-full flex items-center justify-center">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
@@ -450,7 +453,6 @@ export default function AnalyticsClient({
                       </ResponsiveContainer>
                     </div>
 
-                    {/* Columna Listado Lateral */}
                     <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
                       {monthlyAnalytics.expensesByCategory.map((category: any, index: number) => {
                         const percentage = ((category.value / monthlyAnalytics.totalExpense) * 100).toFixed(1);
@@ -511,13 +513,13 @@ export default function AnalyticsClient({
               </Card>
             )}
 
-            {/* Tendencia Diaria */}
+            {/* Tendencia Diaria Acumulativa Rediseñada */}
             {monthlyAnalytics.dailyTrend.length > 0 && (
               <Card className="border-0 shadow-md">
                 <div className="h-1 bg-azul-profundo dark:bg-violeta-principal rounded-t-lg" />
                 <CardHeader className="pt-5">
                   <CardTitle className="text-base font-bold tracking-tight">Tendencia Diaria — {getMonthName(currentMonth)} {currentYear}</CardTitle>
-                  <CardDescription className="font-light">Seguimiento continuo de todos los días del mes bajo hora de Argentina</CardDescription>
+                  <CardDescription className="font-light">Evolución del capital corriente y balance acumulado a lo largo del mes</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={360}>
@@ -531,26 +533,40 @@ export default function AnalyticsClient({
                       />
                       <Legend iconType="circle" iconSize={8} wrapperStyle={{ paddingTop: 12, fontSize: '13px' }} />
 
+                      {/* Área de Balance Neto Acumulado - Destacado en Violeta de la Marca */}
+                      <Area
+                        type="monotone"
+                        dataKey="balance"
+                        stroke="#6C3BFF"
+                        fill="url(#colorBalance)"
+                        name="Balance Disponible"
+                        strokeWidth={3}
+                        dot={false}
+                        activeDot={{ r: 6, strokeWidth: 0, fill: '#6C3BFF' }}
+                      />
+
+                      {/* Línea de Ingresos Acumulados - Verde */}
                       <Area
                         type="monotone"
                         dataKey="income"
                         stroke="#10B981"
                         fill="url(#colorIncome)"
-                        name="Ingresos"
-                        strokeWidth={2.5}
+                        name="Ingresos Totales"
+                        strokeWidth={1.5}
                         dot={false}
-                        activeDot={{ r: 5, strokeWidth: 0, fill: '#10B981' }}
+                        activeDot={{ r: 4, strokeWidth: 0, fill: '#10B981' }}
                       />
 
+                      {/* Línea de Gastos Acumulados - Rojo */}
                       <Area
                         type="monotone"
                         dataKey="expense"
                         stroke="#EF4444"
                         fill="url(#colorExpense)"
-                        name="Gastos"
-                        strokeWidth={2.5}
+                        name="Gastos Totales"
+                        strokeWidth={1.5}
                         dot={false}
-                        activeDot={{ r: 5, strokeWidth: 0, fill: '#EF4444' }}
+                        activeDot={{ r: 4, strokeWidth: 0, fill: '#EF4444' }}
                       />
                     </AreaChart>
                   </ResponsiveContainer>
