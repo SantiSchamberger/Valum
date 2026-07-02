@@ -32,7 +32,8 @@ export default async function HomePage() {
             {/* Botones de la Derecha */}
             <div className="flex items-center gap-3">
               <Link href="/auth/login" className="cursor-pointer">
-                <Button variant="ghost" size="sm" className="cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted font-medium">
+                {/* Cambiado a variant="outline" con borde sutil para que no se camufle */}
+                <Button variant="outline" size="sm" className="cursor-pointer border-border/80 bg-background/50 text-foreground hover:bg-muted font-medium px-4 rounded-md transition-all">
                   Inicia sesión
                 </Button>
               </Link>
