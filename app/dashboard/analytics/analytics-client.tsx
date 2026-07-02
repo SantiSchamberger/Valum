@@ -256,8 +256,8 @@ export default function AnalyticsClient({
                 <button
                   onClick={() => setSelectedCurrency('ARS')}
                   className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${selectedCurrency === 'ARS'
-                      ? 'bg-card text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
                     }`}
                 >
                   Pesos ($)
@@ -265,8 +265,8 @@ export default function AnalyticsClient({
                 <button
                   onClick={() => setSelectedCurrency('USD')}
                   className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${selectedCurrency === 'USD'
-                      ? 'bg-card text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
                     }`}
                 >
                   Dólares (US$)
@@ -478,8 +478,10 @@ export default function AnalyticsClient({
                         formatter={(value) => fmt(value as number)}
                       />
                       <Legend iconType="circle" iconSize={8} wrapperStyle={{ paddingTop: 12, fontSize: '13px' }} />
-                      <Bar dataKey="income" fill="#6C3BFF" name="Ingresos" radius={[6, 6, 0, 0]} maxBarSize={28} />
-                      <Bar dataKey="expense" fill="#A78BFA" name="Gastos" radius={[6, 6, 0, 0]} maxBarSize={28} />
+
+                      {/* Restaurados los colores universales optimizados para Modo Claro y Modo Oscuro */}
+                      <Bar dataKey="income" fill="#10B981" name="Ingresos" radius={[6, 6, 0, 0]} maxBarSize={28} />
+                      <Bar dataKey="expense" fill="#EF4444" name="Gastos" radius={[6, 6, 0, 0]} maxBarSize={28} />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
