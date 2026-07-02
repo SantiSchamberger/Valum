@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react' // <-- CORREGIDO: Agregado useMemo aquí
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, DollarSign, TrendingUp, TrendingDown, RefreshCw } from 'lucide-react'
@@ -81,7 +81,6 @@ export default function ExchangeRateClient({ exchangeRates }: ExchangeRateClient
 
   const chartData = useMemo(() => {
     return sortedRates.map(r => {
-      // Parseo seguro cortando strings para evitar deformaciones UTC en Recharts
       const [year, month, day] = r.date.split('-')
       return {
         date: `${day}/${month}`, // Formato limpio "DD/MM" para el eje X
@@ -260,7 +259,7 @@ export default function ExchangeRateClient({ exchangeRates }: ExchangeRateClient
           </Card>
         )}
 
-        {/* Histórico de cambios ordenado de más nuevo a más viejo */}
+        {/* Histórico de cambios */}
         {sortedRates.length > 1 && (
           <Card className="border-0 shadow-md mt-8">
             <div className="h-1 bg-violeta-claro rounded-t-lg" />
@@ -270,7 +269,6 @@ export default function ExchangeRateClient({ exchangeRates }: ExchangeRateClient
             </CardHeader>
             <CardContent className="divide-y divide-border/50 max-h-[400px] overflow-y-auto pr-2">
               {[...sortedRates].reverse().map((rate, index, array) => {
-                // Al estar invertido, el anterior en el tiempo es el siguiente elemento del mapa (index + 1)
                 if (index === array.length - 1) {
                   return (
                     <div key={rate.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-4">
