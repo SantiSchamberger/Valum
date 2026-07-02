@@ -489,12 +489,15 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
                 )}
                 {(profile.role === 'advisor' || profile.role === 'admin') && (
                   <Link href="/dashboard/advisors">
-                    {/* Ajustado borde y hover a los tonos corporativos */}
-                    <Button variant="outline" className="w-full border-emerald-200 text-emerald-600 hover:bg-emerald-50 dark:border-emerald-800/60 dark:text-emerald-400 dark:hover:bg-emerald-950/30 hover:shadow-sm font-medium" size="lg">
-                      <Users className="w-4 h-4 mr-2" />
-                      Asesores Financieros
-                    </Button>
-                  </Link>
+                      <Button 
+                        variant="outline" 
+                        className="w-full border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:border-emerald-800/60 dark:text-emerald-400 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300 hover:shadow-sm font-medium transition-all" 
+                        size="lg"
+                      >
+                        <Users className="w-4 h-4 mr-2" />
+                        Asesores Financieros
+                      </Button>
+                    </Link>
                 )}
                 {(profile.role === 'advisor' || profile.role === 'admin') && (
                   <Link href="/dashboard/clients">
