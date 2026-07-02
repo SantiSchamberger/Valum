@@ -26,16 +26,17 @@ export default function CategoriesClient({ user, initialCategories }: Categories
   const [categories, setCategories] = useState<Category[]>(initialCategories)
   const [isAddingNew, setIsAddingNew] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  
+
   const [formData, setFormData] = useState({
     name: '',
     color: '#10B981',
   })
 
+  // Paleta de colores optimizada con el nuevo Amarillo vibrante de Tailwind
   const colors = [
     { hex: '#3B82F6', label: 'Azul' },
     { hex: '#10B981', label: 'Verde' },
-    { hex: '#F59E0B', label: 'Ámbar' },
+    { hex: '#EAB308', label: 'Amarillo' }, // Reemplazado #F59E0B por #EAB308
     { hex: '#EF4444', label: 'Rojo' },
     { hex: '#8B5CF6', label: 'Violeta' },
     { hex: '#EC4899', label: 'Rosa' },
@@ -107,16 +108,16 @@ export default function CategoriesClient({ user, initialCategories }: Categories
           <div className="flex flex-wrap justify-between items-center gap-3 py-4 sm:h-16 sm:py-0">
             <div className="flex items-center gap-3">
               <Link href="/dashboard">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="font-medium">
                   <ArrowLeft className="w-4 h-4 mr-1.5" />
                   Volver
                 </Button>
               </Link>
-              <h1 className="text-xl font-bold text-foreground">Categorías</h1>
+              <h1 className="text-xl font-bold text-foreground tracking-tight">Categorías</h1>
             </div>
-            <Button 
+            <Button
               onClick={() => setIsAddingNew(!isAddingNew)}
-              className="gap-2 shadow-sm"
+              className="gap-2 shadow-sm font-medium"
               size="sm"
             >
               <Plus className="w-4 h-4" />
@@ -130,10 +131,10 @@ export default function CategoriesClient({ user, initialCategories }: Categories
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isAddingNew && (
           <Card className="border-0 shadow-lg mb-8">
-            <div className="h-1 w-full bg-gradient-to-r from-primary to-secondary rounded-t-lg" />
+            <div className="h-1 w-full bg-violeta-principal rounded-t-lg" />
             <CardHeader className="pt-5">
-              <CardTitle className="text-lg font-bold">Crear Nueva Categoría</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg font-bold tracking-tight">Crear Nueva Categoría</CardTitle>
+              <CardDescription className="font-light">
                 Organizá tus transacciones por categorías personalizadas
               </CardDescription>
             </CardHeader>
@@ -145,7 +146,7 @@ export default function CategoriesClient({ user, initialCategories }: Categories
                     id="name"
                     placeholder="Ej: Alimentación, Transporte, Entretenimiento..."
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
                     className="h-10"
                   />
@@ -159,11 +160,10 @@ export default function CategoriesClient({ user, initialCategories }: Categories
                         key={hex}
                         type="button"
                         title={label}
-                        className={`w-9 h-9 rounded-xl transition-all hover:scale-110 active:scale-95 ${
-                          formData.color === hex ? 'scale-110 ring-2 ring-offset-2 ring-foreground shadow-md' : 'ring-1 ring-transparent ring-offset-1'
-                        }`}
+                        className={`w-9 h-9 rounded-xl transition-all hover:scale-110 active:scale-95 ${formData.color === hex ? 'scale-110 ring-2 ring-offset-2 ring-foreground shadow-md' : 'ring-1 ring-transparent ring-offset-1'
+                          }`}
                         style={{ backgroundColor: hex }}
-                        onClick={() => setFormData({...formData, color: hex})}
+                        onClick={() => setFormData({ ...formData, color: hex })}
                       />
                     ))}
                   </div>
@@ -176,7 +176,7 @@ export default function CategoriesClient({ user, initialCategories }: Categories
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full shadow-sm" disabled={isLoading} size="lg">
+                <Button type="submit" className="w-full shadow-sm font-medium" disabled={isLoading} size="lg">
                   {isLoading ? 'Creando...' : 'Crear Categoría'}
                 </Button>
               </form>
@@ -192,8 +192,8 @@ export default function CategoriesClient({ user, initialCategories }: Categories
                 <Tag className="w-8 h-8 text-muted-foreground" />
               </div>
               <p className="font-medium text-foreground mb-2">No hay categorías creadas</p>
-              <p className="text-sm text-muted-foreground mb-6">Creá categorías para organizar mejor tus transacciones</p>
-              <Button onClick={() => setIsAddingNew(true)} className="shadow-sm">
+              <p className="text-sm text-muted-foreground font-light mb-6">Creá categorías para organizar mejor tus transacciones</p>
+              <Button onClick={() => setIsAddingNew(true)} className="shadow-sm font-medium">
                 Crear tu primera categoría
               </Button>
             </CardContent>
@@ -206,7 +206,7 @@ export default function CategoriesClient({ user, initialCategories }: Categories
                 <CardContent className="py-4 px-5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div 
+                      <div
                         className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
                         style={{ backgroundColor: category.color }}
                       >
@@ -219,7 +219,7 @@ export default function CategoriesClient({ user, initialCategories }: Categories
                             className="w-2.5 h-2.5 rounded-full"
                             style={{ backgroundColor: category.color }}
                           />
-                          <p className="text-xs text-muted-foreground font-mono">{category.color}</p>
+                          <p className="text-xs text-muted-foreground font-mono font-light">{category.color}</p>
                         </div>
                       </div>
                     </div>
