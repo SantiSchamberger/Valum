@@ -21,20 +21,16 @@ export default async function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
 
-            {/* Contenedor del Logo Optimizado */}
-            <Link href="/" className="flex items-center group h-full">
-              <div className="flex items-center bg-gradient-to-b from-white/[0.04] to-transparent dark:from-white/[0.02] px-4 h-12 rounded-md border border-white/[0.05] shadow-inner transition-all duration-200 group-hover:bg-white/[0.06] group-hover:border-white/[0.1]">
-                <img
-                  src="/logo.png"
-                  alt="Logo de Valum"
-                  /*
-                    Mantenemos una escala elegante. 
-                    Si el texto de tu logo sigue viéndose oscuro, deja 'dark:invert'. 
-                    Si prefieres ver los colores originales de tu archivo, quítalo.
-                  */
-                  className="h-6 md:h-7 w-auto object-contain dark:invert opacity-90 group-hover:opacity-100 transition-opacity"
-                />
-              </div>
+            <Link href="/" className="flex items-center group">
+              <img
+                src="/logo.png"
+                alt="Logo de Valum"
+                /* 
+                  Aumentamos el tamaño a h-9 (36px) en móviles y h-11 (44px) en escritorio.
+                  Como ya editaste el diseño, eliminamos 'dark:invert' y cualquier fondo.
+                */
+                className="h-9 md:h-11 w-auto object-contain transition-all duration-200 group-hover:scale-[1.02] group-hover:opacity-95"
+              />
             </Link>
 
             {/* Botones de la Derecha */}
