@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { LogOut, Plus, TrendingUp, TrendingDown, Wallet, BarChart3, Users, DollarSign, RefreshCw } from 'lucide-react'
+import { LogOut, Plus, TrendingUp, TrendingDown, Wallet, BarChart3, Users, DollarSign, RefreshCw, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 
 interface DashboardClientProps {
@@ -24,6 +24,10 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
   const [currentTipIndex, setCurrentTipIndex] = useState(0)
   const [tipHistory, setTipHistory] = useState<number[]>([])
   const [notifications, setNotifications] = useState<Array<{ id: string; title: string; message: string; created_at: string; admin_email: string; admin_name?: string }>>([])
+
+  // Estado para controlar la visibilidad de los saldos (Censura)
+  const [hideBalances, setHideBalances] = useState(false)
+
   const [stats, setStats] = useState({
     totalIncomeARS: 0,
     totalExpenseARS: 0,
@@ -106,6 +110,12 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
     fetchStats()
     fetchExchangeRate()
     fetchNotifications()
+
+    // Cargar la preferencia de privacidad del usuario al entrar
+    if (typeof window !== 'undefined') {
+      const storedPrivacy = localStorage.getItem('valumHideBalances') === 'true'
+      setHideBalances(storedPrivacy)
+    }
 
     const interval = setInterval(() => {
       fetchExchangeRate()
@@ -204,15 +214,25 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
     router.push('/auth/login')
   }
 
+  // Alterna y persiste la visibilidad de los saldos
+  const togglePrivacy = () => {
+    const nextState = !hideBalances
+    setHideBalances(nextState)
+    localStorage.setItem('valumHideBalances', String(nextState))
+  }
+
   const change = exchangeRate !== null && previousRate !== null ? exchangeRate - previousRate : null
 
-  // Modificado para usar comas y formato estándar regional en porcentajes
   const changePercent = change !== null && previousRate !== null
     ? new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format((change / previousRate) * 100)
     : null
 
-  // Función formateadora optimizada con el estándar local de Argentina (es-AR)
+  // Modificado: Si la privacidad está activa, reemplaza el monto por puntos de censura
   const formatAmount = (amount: number, currency: 'ARS' | 'USD' = 'ARS') => {
+    if (hideBalances) {
+      return currency === 'USD' ? 'US$ ••••••' : '$ ••••••'
+    }
+
     const formattedNumber = new Intl.NumberFormat('es-AR', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -221,7 +241,6 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
     return currency === 'USD' ? `US$${formattedNumber}` : `$${formattedNumber}`
   }
 
-  // Helper para dar formato simple de cotización sin duplicar lógica
   const formatRate = (value: number) => {
     return new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
   }
@@ -264,14 +283,27 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-foreground tracking-tight mb-2">
-            Bienvenido, {profile.full_name?.split(' ')[0] || 'Usuario'}
-          </h2>
-          <p className="text-muted-foreground font-light">
-            Aquí podés gestionar tus finanzas de forma simple e intuitiva
-          </p>
+        {/* Welcome Section con el Botón del Ojito */}
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-bold text-foreground tracking-tight mb-2">
+              Bienvenido, {profile.full_name?.split(' ')[0] || 'Usuario'}
+            </h2>
+            <p className="text-muted-foreground font-light">
+              Aquí podés gestionar tus finanzas de forma simple e intuitiva
+            </p>
+          </div>
+
+          {/* BOTÓN REGULADOR DE PRIVACIDAD (Ojito de Mercado Pago) */}
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={togglePrivacy}
+            className="rounded-xl w-11 h-11 border-border bg-card shadow-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 shrink-0 transition-all"
+            title={hideBalances ? "Mostrar saldos" : "Ocultar saldos"}
+          >
+            {hideBalances ? <EyeOff className="w-5 h-5 text-violeta-principal" /> : <Eye className="w-5 h-5" />}
+          </Button>
         </div>
 
         {/* Stats Cards */}
