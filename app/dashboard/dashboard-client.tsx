@@ -490,7 +490,7 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
                 {(profile.role === 'advisor' || profile.role === 'admin') && (
                   <Link href="/dashboard/advisors">
                     {/* Ajustado borde y hover a los tonos corporativos */}
-                    <Button variant="outline" className="w-full border-violeta-claro/40 text-violeta-principal hover:bg-violeta-principal/5 dark:text-violeta-claro dark:hover:bg-violeta-principal/10 font-medium" size="lg">
+                    <Button variant="outline" className="w-full border-emerald-200 text-emerald-600 hover:bg-emerald-50 dark:border-emerald-800/60 dark:text-emerald-400 dark:hover:bg-emerald-950/30 hover:shadow-sm font-medium" size="lg">
                       <Users className="w-4 h-4 mr-2" />
                       Asesores Financieros
                     </Button>
