@@ -1,20 +1,16 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
-// FORZAR A NEXT.JS A ANULAR EL CACHÉ DE ESTA API EN PRODUCCIÓN
 export const dynamic = 'force-dynamic'
 
-// Reemplaza únicamente la función fetchExternalRate de tu route.ts por esta versión en tiempo real:
 async function fetchExternalRate() {
-  // PRIORIDAD 1: Argentina Datos (Minuto a minuto oficial real de pizarras locales)
+  // 1. Intentar con Argentina Datos (Pizarra local)
   try {
     const response = await fetch('https://api.argentinadatos.com/v1/cotizaciones/dolares/oficial', {
       cache: 'no-store'
     })
-
     if (response.ok) {
       const data = await response.json()
-      // Esta API nos devuelve el valor de venta instantáneo del mercado oficial
       const rate = data.venta || data.rate
       if (rate) return parseFloat(String(rate))
     }
@@ -22,12 +18,11 @@ async function fetchExternalRate() {
     console.error('Error fetching from Argentina Datos:', error)
   }
 
-  // PRIORIDAD 2: Bluelytics (Excelente fallback en tiempo real para Argentina)
+  // 2. Fallback: Bluelytics
   try {
     const response = await fetch('https://api.bluelytics.com.ar/v2/latest', {
       cache: 'no-store'
     })
-
     if (response.ok) {
       const data = await response.json()
       const rate = data.oficial?.value_sell
@@ -35,21 +30,6 @@ async function fetchExternalRate() {
     }
   } catch (error) {
     console.error('Error fetching from Bluelytics API:', error)
-  }
-
-  // PRIORIDAD 3: API global (Tu fallback original que actualiza 1 vez al día)
-  try {
-    const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD', {
-      cache: 'no-store'
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      const rate = data.rates?.ARS
-      if (rate) return parseFloat(rate)
-    }
-  } catch (error) {
-    console.error('Error fetching from international fallback:', error)
   }
 
   return null
@@ -62,7 +42,6 @@ export async function GET(request: NextRequest) {
 
     let today = dateParam
 
-    // CORRECCIÓN DE ZONA HORARIA: Si no envían date, calculamos el día actual real en Argentina (no la UTC del servidor)
     if (!today) {
       const argDateStr = new Date().toLocaleString('en-US', { timeZone: 'America/Buenos_Aires' })
       const argDate = new Date(argDateStr)
@@ -72,33 +51,55 @@ export async function GET(request: NextRequest) {
       today = `${yyyy}-${mm}-${dd}`
     }
 
-    // Primero intentar obtener una tasa externa actualizada
+    // 1. Primero buscamos si YA existe una tasa guardada en la BD para HOY
+    const { data: existingRate, error: searchError } = await supabase
+      .from('exchange_rates')
+      .select('*')
+      .eq('date', today)
+      .eq('currency_from', 'USD')
+      .eq('currency_to', 'ARS')
+      .maybeSingle() // <-- CORRECCIÓN: No rompe si la tabla está vacía
+
+    if (searchError) {
+      console.error('Error buscando tasa en BD:', searchError)
+    }
+
+    // Si ya existe en la base de datos, la devolvemos directo para ahorrar recursos
+    if (existingRate) {
+      return NextResponse.json({
+        id: existingRate.id,
+        date: existingRate.date,
+        currency_from: existingRate.currency_from,
+        currency_to: existingRate.currency_to,
+        rate: existingRate.rate,
+        source: existingRate.source
+      })
+    }
+
+    // 2. Si no existía, vamos a buscarla a internet
     const externalRate = await fetchExternalRate()
 
     if (externalRate) {
-      // Si obtuvimos una tasa externa, guardarla en la BD para este día si no existe
-      const { data: existingRate } = await supabase
+      // Intentamos guardarla de forma segura en la base de datos
+      const { data: insertedData, error: insertError } = await supabase
         .from('exchange_rates')
-        .select('*')
-        .eq('date', today)
-        .eq('currency_from', 'USD')
-        .eq('currency_to', 'ARS')
-        .maybeSingle() // Usamos maybeSingle para evitar excepciones molestas si no encuentra fila
+        .insert({
+          date: today,
+          currency_from: 'USD',
+          currency_to: 'ARS',
+          rate: externalRate,
+          source: 'external_api'
+        })
+        .select()
+        .maybeSingle()
 
-      if (!existingRate) {
-        // Guardar la nueva tasa
-        await supabase
-          .from('exchange_rates')
-          .insert({
-            date: today,
-            currency_from: 'USD',
-            currency_to: 'ARS',
-            rate: externalRate,
-            source: 'external_api'
-          })
+      if (insertError) {
+        // Si da error de RLS, el log te lo va a cantar acá en la consola de Vercel
+        console.error('ERROR CRÍTICO AL INSERTAR EN SUPABASE:', insertError)
       }
 
       return NextResponse.json({
+        id: insertedData?.id || Math.random().toString(),
         date: today,
         currency_from: 'USD',
         currency_to: 'ARS',
@@ -107,35 +108,19 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Si no hay tasa externa, buscar en BD
-    const { data: existingRate } = await supabase
-      .from('exchange_rates')
-      .select('*')
-      .eq('date', today)
-      .eq('currency_from', 'USD')
-      .eq('currency_to', 'ARS')
-      .maybeSingle()
-
-    if (existingRate) {
-      return NextResponse.json(existingRate)
-    }
-
-    // Si no existe y no pudimos obtener tasa externa, retornar valor por defecto
+    // 3. Fallback de emergencia total
     return NextResponse.json({
       date: today,
       currency_from: 'USD',
       currency_to: 'ARS',
       rate: 1000,
       source: 'default',
-      note: 'No exchange rate data available - using default'
+      note: 'No exchange rate data available'
     })
+
   } catch (error) {
-    console.error('Error in get-exchange-rate:', error)
-    return NextResponse.json({
-      error: 'Internal server error',
-      rate: 1000,
-      source: 'default'
-    }, { status: 200 })
+    console.error('Error general en GET get-exchange-rate:', error)
+    return NextResponse.json({ error: 'Internal server error', rate: 1000, source: 'default' }, { status: 200 })
   }
 }
 
