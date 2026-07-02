@@ -205,12 +205,25 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
   }
 
   const change = exchangeRate !== null && previousRate !== null ? exchangeRate - previousRate : null
+
+  // Modificado para usar comas y formato estándar regional en porcentajes
   const changePercent = change !== null && previousRate !== null
-    ? ((change / previousRate) * 100).toFixed(2)
+    ? new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format((change / previousRate) * 100)
     : null
 
+  // Función formateadora optimizada con el estándar local de Argentina (es-AR)
   const formatAmount = (amount: number, currency: 'ARS' | 'USD' = 'ARS') => {
-    return currency === 'USD' ? `US$${amount.toFixed(2)}` : `$${amount.toFixed(2)}`
+    const formattedNumber = new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount)
+
+    return currency === 'USD' ? `US$${formattedNumber}` : `$${formattedNumber}`
+  }
+
+  // Helper para dar formato simple de cotización sin duplicar lógica
+  const formatRate = (value: number) => {
+    return new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
   }
 
   return (
@@ -220,7 +233,6 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              {/* Cambiado degradado genérico por los tonos violetas corporativos */}
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violeta-principal to-violeta-claro flex items-center justify-center shadow-md">
                 <Wallet className="w-6 h-6 text-white" />
               </div>
@@ -314,7 +326,6 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
 
           {/* Balance Card */}
           <Card className="border-0 shadow-md overflow-hidden">
-            {/* Cambiado degradado índigo por Violeta Corporativo */}
             <div className={`h-1 w-full ${stats.balanceARS >= 0 ? 'bg-violeta-principal' : 'bg-orange-500'}`} />
             <CardHeader className="pb-2 pt-4">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -358,7 +369,7 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-3xl font-bold text-violeta-principal tracking-tight">
-                      ${exchangeRate.toFixed(2)}
+                      ${formatRate(exchangeRate)}
                     </p>
                     <p className="text-sm text-muted-foreground mt-1 font-light">ARS por 1 USD</p>
                     {lastUpdated && (
@@ -384,7 +395,7 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
                           {change >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
                           <div>
                             <p className="text-base font-semibold">
-                              {change >= 0 ? '+' : ''}${Math.abs(change).toFixed(2)}
+                              {change >= 0 ? '+' : ''}${formatRate(Math.abs(change))}
                             </p>
                             <p className="text-sm opacity-90 font-light">
                               {changePercent}% {change >= 0 ? 'subió' : 'bajó'}
@@ -489,15 +500,15 @@ export default function DashboardClient({ user, profile }: DashboardClientProps)
                 )}
                 {(profile.role === 'advisor' || profile.role === 'admin') && (
                   <Link href="/dashboard/advisors">
-                      <Button 
-                        variant="outline" 
-                        className="w-full border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:border-emerald-800/60 dark:text-emerald-400 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300 hover:shadow-sm font-medium transition-all" 
-                        size="lg"
-                      >
-                        <Users className="w-4 h-4 mr-2" />
-                        Asesores Financieros
-                      </Button>
-                    </Link>
+                    <Button
+                      variant="outline"
+                      className="w-full border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:border-emerald-800/60 dark:text-emerald-400 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300 hover:shadow-sm font-medium transition-all"
+                      size="lg"
+                    >
+                      <Users className="w-4 h-4 mr-2" />
+                      Asesores Financieros
+                    </Button>
+                  </Link>
                 )}
                 {(profile.role === 'advisor' || profile.role === 'admin') && (
                   <Link href="/dashboard/clients">
