@@ -22,18 +22,19 @@ export default async function HomePage() {
           <div className="flex justify-between items-center h-16">
 
             {/* Contenedor del Logo Optimizado */}
+            {/* Contenedor del Logo Optimizado con Fondo Semi-Transparente */}
             <Link href="/" className="flex items-center group">
-              <img
-                src="/logo.png"
-                alt="Logo de Valum"
-                /* 
-                  CAMBIOS AQUÍ: 
-                  - Reducido de h-16 a h-7 (escalando a h-8 en pantallas medianas) para achicarlo.
-                  - Se añade 'dark:invert' para que las letras oscuras se vuelvan blancas en fondo oscuro.
-                  - 'transition-opacity' para un feedback visual sutil al pasar el mouse.
-                */
-                className="h-7 md:h-8 w-auto object-contain dark:invert transition-opacity group-hover:opacity-90"
-              />
+              <div className="flex items-center bg-white/10 dark:bg-white/5 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-white/10 shadow-sm transition-all group-hover:bg-white/15">
+                <img
+                  src="/logo.png"
+                  alt="Logo de Valum"
+                  /* 
+                    Mantenemos el tamaño sutil (h-7 o h-8).
+                    Puedes probar quitando o dejando 'dark:invert' dependiendo de cómo responda tu archivo PNG con este nuevo fondo.
+                  */
+                  className="h-7 md:h-8 w-auto object-contain dark:invert transition-opacity group-hover:opacity-90"
+                />
+              </div>
             </Link>
 
             {/* Botones de la Derecha */}
