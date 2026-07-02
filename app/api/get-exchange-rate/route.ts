@@ -4,8 +4,40 @@ import { NextRequest, NextResponse } from 'next/server'
 // FORZAR A NEXT.JS A ANULAR EL CACHÉ DE ESTA API EN PRODUCCIÓN
 export const dynamic = 'force-dynamic'
 
-// Función para obtener el tipo de cambio de una API pública
+// Reemplaza únicamente la función fetchExternalRate de tu route.ts por esta versión en tiempo real:
 async function fetchExternalRate() {
+  // PRIORIDAD 1: Argentina Datos (Minuto a minuto oficial real de pizarras locales)
+  try {
+    const response = await fetch('https://api.argentinadatos.com/v1/cotizaciones/dolares/oficial', {
+      cache: 'no-store'
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      // Esta API nos devuelve el valor de venta instantáneo del mercado oficial
+      const rate = data.venta || data.rate
+      if (rate) return parseFloat(String(rate))
+    }
+  } catch (error) {
+    console.error('Error fetching from Argentina Datos:', error)
+  }
+
+  // PRIORIDAD 2: Bluelytics (Excelente fallback en tiempo real para Argentina)
+  try {
+    const response = await fetch('https://api.bluelytics.com.ar/v2/latest', {
+      cache: 'no-store'
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+      const rate = data.oficial?.value_sell
+      if (rate) return parseFloat(String(rate))
+    }
+  } catch (error) {
+    console.error('Error fetching from Bluelytics API:', error)
+  }
+
+  // PRIORIDAD 3: API global (Tu fallback original que actualiza 1 vez al día)
   try {
     const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD', {
       cache: 'no-store'
@@ -17,22 +49,7 @@ async function fetchExternalRate() {
       if (rate) return parseFloat(rate)
     }
   } catch (error) {
-    console.error('Error fetching from external API:', error)
-  }
-
-  // Fallback: intentar otra API
-  try {
-    const response = await fetch('https://api.exchange-rates.org/latest?base=USD&symbols=ARS', {
-      cache: 'no-store'
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      const rate = data.rates?.ARS
-      if (rate) return parseFloat(rate)
-    }
-  } catch (error) {
-    console.error('Error fetching from fallback API:', error)
+    console.error('Error fetching from international fallback:', error)
   }
 
   return null
