@@ -45,10 +45,8 @@ interface AnalyticsClientProps {
   categories: Category[]
 }
 
-// Helper seguro para convertir cualquier fecha de la base de datos a un objeto Date forzado en la zona horaria de Argentina
 const getArgentinaDate = (dateString: string): Date => {
   const date = new Date(dateString)
-  // Convertimos usando el string regionalizado de Argentina para normalizar variaciones de servidores (Vercel UTC)
   const tzString = date.toLocaleString('en-US', { timeZone: 'America/Buenos_Aires' })
   return new Date(tzString)
 }
@@ -70,7 +68,6 @@ export default function AnalyticsClient({
     setSelectedMonth(value ?? '')
   }
 
-  // Inicializar selectores basados estrictamente en la fecha actual de Argentina
   const nowInArg = getArgentinaDate(new Date().toISOString())
   const defaultMonth = String(nowInArg.getMonth() + 1).padStart(2, '0')
   const defaultYear = String(nowInArg.getFullYear())
@@ -144,33 +141,44 @@ export default function AnalyticsClient({
       }, [])
       .sort((a: any, b: any) => b.value - a.value)
 
-    const dailyTrend = monthTransactions
-      .reduce((acc: any, t) => {
-        const argDate = getArgentinaDate(t.date)
-        const dayStr = String(argDate.getDate()).padStart(2, '0')
-        const monthStr = String(argDate.getMonth() + 1).padStart(2, '0')
-        const dayKey = `${dayStr}/${monthStr}`
+    // SOLUCCIÓN TENDENCIA DIARIA COMPLETA: Generar todos los días del mes correspondiente
+    const yearNum = parseInt(currentYear)
+    const monthNum = parseInt(currentMonth)
 
-        const existing = acc.find((item: any) => item.date === dayKey)
+    // Obtenemos cuántos días tiene el mes seleccionado de forma dinámica
+    const daysInMonth = new Date(yearNum, monthNum, 0).getDate()
 
-        if (existing) {
-          if (t.type === 'income') existing.income += t.amount
-          else existing.expense += t.amount
+    // Creamos la estructura base del mes completo con montos en 0
+    const dailyTrendMap: { [key: string]: any } = {}
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dayStr = String(d).padStart(2, '0')
+      const key = `${dayStr}/${currentMonth}`
+      dailyTrendMap[key] = {
+        date: key,
+        income: 0,
+        expense: 0,
+        rawDay: d
+      }
+    }
+
+    // Acoplamos las transacciones reales sobre los días correspondientes
+    monthTransactions.forEach(t => {
+      const argDate = getArgentinaDate(t.date)
+      const dayStr = String(argDate.getDate()).padStart(2, '0')
+      const monthStr = String(argDate.getMonth() + 1).padStart(2, '0')
+      const key = `${dayStr}/${monthStr}`
+
+      if (dailyTrendMap[key]) {
+        if (t.type === 'income') {
+          dailyTrendMap[key].income += t.amount
         } else {
-          acc.push({
-            date: dayKey,
-            income: t.type === 'income' ? t.amount : 0,
-            expense: t.type === 'expense' ? t.amount : 0,
-            rawDay: argDate.getDate(),
-            rawMonth: argDate.getMonth() + 1
-          })
+          dailyTrendMap[key].expense += t.amount
         }
-        return acc
-      }, [])
-      .sort((a: any, b: any) => {
-        if (a.rawMonth !== b.rawMonth) return a.rawMonth - b.rawMonth
-        return a.rawDay - b.rawDay
-      })
+      }
+    })
+
+    // Transformamos el mapa de días en una lista ordenada cronológicamente para Recharts
+    const dailyTrend = Object.values(dailyTrendMap).sort((a: any, b: any) => a.rawDay - b.rawDay)
 
     return { totalIncome, totalExpense, balance, expensesByCategory, dailyTrend, monthTransactions }
   }, [filteredTransactions, currentMonth, currentYear])
@@ -233,7 +241,6 @@ export default function AnalyticsClient({
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Definición de gradientes reutilizables para los gráficos de área (Verde y Rojo) */}
       <svg className="absolute w-0 h-0" width="0" height="0">
         <defs>
           <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
@@ -502,19 +509,20 @@ export default function AnalyticsClient({
               </Card>
             )}
 
-            {/* Tendencia Diaria */}
+            {/* Tendencia Diaria Completa del Mes (1 al 31) */}
             {monthlyAnalytics.dailyTrend.length > 0 && (
               <Card className="border-0 shadow-md">
                 <div className="h-1 bg-azul-profundo dark:bg-violeta-principal rounded-t-lg" />
                 <CardHeader className="pt-5">
                   <CardTitle className="text-base font-bold tracking-tight">Tendencia Diaria — {getMonthName(currentMonth)} {currentYear}</CardTitle>
-                  <CardDescription className="font-light">Movimientos de cuenta regionalizados bajo zona horaria Argentina</CardDescription>
+                  <CardDescription className="font-light">Seguimiento continuo de todos los días del mes bajo hora de Argentina</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={360}>
                     <AreaChart data={monthlyAnalytics.dailyTrend}>
                       <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-5" vertical={false} />
-                      <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'currentColor' }} tickLine={false} axisLine={false} dy={8} />
+                      {/* Reducimos ligeramente el tamaño de fuente en XAxis para que los 30/31 días quepan con comodidad */}
+                      <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'currentColor' }} tickLine={false} axisLine={false} dy={8} />
                       <YAxis tick={{ fontSize: 11, fill: 'currentColor' }} tickLine={false} axisLine={false} dx={-8} />
                       <Tooltip
                         contentStyle={{ borderRadius: '12px', background: 'var(--card)', borderColor: 'var(--border)' }}
